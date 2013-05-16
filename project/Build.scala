@@ -1,5 +1,6 @@
 import sbt._
 import Keys._
+import spray.revolver.RevolverPlugin.Revolver
 
 
 object Build extends Build with DocSupport {
@@ -121,6 +122,12 @@ object Build extends Build with DocSupport {
     .settings(sprayModuleSettings: _*)
     .settings(libraryDependencies ++= provided(akkaActor, servlet30))
 
+  lazy val spraySwagger = Project("spray-swagger", file("spray-swagger"))
+    .dependsOn(sprayRouting)
+    .settings(sprayModuleSettings: _*)
+    .settings(
+      libraryDependencies ++=
+        compile(sprayJson) ++ provided(akkaActor, scalaReflect))
 
   lazy val sprayTestKit = Project("spray-testkit", file("spray-testkit"))
     .dependsOn(
@@ -169,7 +176,7 @@ object Build extends Build with DocSupport {
   // -------------------------------------------------------------------------------------------------------------------
 
   lazy val examples = Project("examples", file("examples"))
-    .aggregate(sprayCanExamples, sprayClientExamples, sprayIOExamples, sprayRoutingExamples, sprayServletExamples)
+    .aggregate(sprayCanExamples, sprayClientExamples, sprayIOExamples, sprayRoutingExamples, sprayServletExamples, spraySwaggerExamples)
     .settings(exampleSettings: _*)
 
   lazy val sprayCanExamples = Project("spray-can-examples", file("examples/spray-can"))
@@ -266,5 +273,19 @@ object Build extends Build with DocSupport {
       compile(akkaActor) ++
       runtime(akkaSlf4j, logback) ++
       container(jettyWebApp, servlet30)
+    )
+
+  lazy val spraySwaggerExamples = Project("spray-swagger-examples", file("examples/spray-swagger"))
+    .aggregate(petStore)
+    .settings(exampleSettings: _*)
+
+  lazy val petStore = Project("pet-store", file("examples/spray-swagger/pet-store"))
+    .dependsOn(sprayCan, sprayRouting, spraySwagger)
+    .settings(exampleSettings: _*)
+    .settings(Revolver.settings: _*)
+    .settings(libraryDependencies ++=
+      compile(akkaActor) ++
+      test(specs2) ++
+      runtime(akkaSlf4j, logback)
     )
 }
