@@ -8,10 +8,11 @@ import java.net.InetSocketAddress
 import java.net.Socket
 import akka.io.Inet._
 import com.typesafe.config.Config
-import scala.concurrent.duration._
+import akka.util.duration._
 import scala.collection.immutable
-import akka.util.ByteString
+import akka.util.{ Duration, FiniteDuration, ByteString }
 import akka.actor._
+import java.util.concurrent.TimeUnit
 
 /**
  * TCP Extension for Akka’s IO layer.
@@ -439,7 +440,7 @@ class TcpExt(system: ExtendedActorSystem) extends IO.Extension {
     val MaxDirectBufferPoolSize: Int = getInt("direct-buffer-pool-limit")
     val RegisterTimeout: Duration = getString("register-timeout") match {
       case "infinite" ⇒ Duration.Undefined
-      case x          ⇒ Duration(getMilliseconds("register-timeout"), MILLISECONDS)
+      case x          ⇒ Duration(getMilliseconds("register-timeout"), TimeUnit.MILLISECONDS)
     }
     val ReceivedMessageSizeLimit: Int = getString("max-received-message-size") match {
       case "unlimited" ⇒ Int.MaxValue
@@ -459,8 +460,8 @@ class TcpExt(system: ExtendedActorSystem) extends IO.Extension {
 
     private[this] def getIntBytes(path: String): Int = {
       val size = getBytes(path)
-      require(size < Int.MaxValue, s"$path must be < 2 GiB")
-      require(size >= 0, s"$path must be non-negative")
+      require(size < Int.MaxValue, path + " must be < 2 GiB")
+      require(size >= 0, path + " must be non-negative")
       size.toInt
     }
   }

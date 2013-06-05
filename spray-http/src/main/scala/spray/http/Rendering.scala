@@ -22,7 +22,7 @@ import scala.collection.LinearSeq
 import spray.http.parser.CharPredicate
 
 trait Renderable {
-  def render[R <: Rendering](r: R): r.type
+  def render[R <: Rendering](r: R): R
 }
 
 trait ToStringRenderable extends Renderable {
@@ -42,56 +42,56 @@ trait LazyValueBytesRenderable extends Renderable {
     if (_valueBytes != null) _valueBytes else { _valueBytes = asciiBytes(value); _valueBytes }
 
   def value: String
-  def render[R <: Rendering](r: R): r.type = r ~~ valueBytes
+  def render[R <: Rendering](r: R): R = r ~~ valueBytes
   override def toString = value
 }
 
 trait SingletonValueRenderable extends Product with Renderable {
   private[this] val valueBytes = asciiBytes(value)
   def value = productPrefix
-  def render[R <: Rendering](r: R): r.type = r ~~ valueBytes
+  def render[R <: Rendering](r: R): R = r ~~ valueBytes
 }
 
 trait Renderer[-T] {
-  def render[R <: Rendering](r: R, value: T): r.type
+  def render[R <: Rendering](r: R, value: T): R
 }
 
 object Renderer {
   implicit object CharRenderer extends Renderer[Char] {
-    def render[R <: Rendering](r: R, value: Char): r.type = r ~~ value
+    def render[R <: Rendering](r: R, value: Char): R = r ~~ value
   }
   implicit object StringRenderer extends Renderer[String] {
-    def render[R <: Rendering](r: R, value: String): r.type = r ~~ value
+    def render[R <: Rendering](r: R, value: String): R = r ~~ value
   }
   implicit object BytesRenderer extends Renderer[Array[Byte]] {
-    def render[R <: Rendering](r: R, value: Array[Byte]): r.type = r ~~ value
+    def render[R <: Rendering](r: R, value: Array[Byte]): R = r ~~ value
   }
   implicit object CharsRenderer extends Renderer[Array[Char]] {
-    def render[R <: Rendering](r: R, value: Array[Char]): r.type = r ~~ value
+    def render[R <: Rendering](r: R, value: Array[Char]): R = r ~~ value
   }
   object RenderableRenderer extends Renderer[Renderable] {
-    def render[R <: Rendering](r: R, value: Renderable): r.type = value.render(r)
+    def render[R <: Rendering](r: R, value: Renderable): R = value.render(r)
   }
   implicit def renderableRenderer[T <: Renderable]: Renderer[T] = RenderableRenderer
 
   def optionRenderer[D, T](defaultValue: D)(implicit sRenderer: Renderer[D], tRenderer: Renderer[T]) =
     new Renderer[Option[T]] {
-      def render[R <: Rendering](r: R, value: Option[T]): r.type =
+      def render[R <: Rendering](r: R, value: Option[T]): R =
         if (value.isEmpty) sRenderer.render(r, defaultValue) else tRenderer.render(r, value.get)
     }
 
   def defaultSeqRenderer[T: Renderer] = seqRenderer[Renderable, T](Rendering.`, `)
   def seqRenderer[S, T](separator: S)(implicit sRenderer: Renderer[S], tRenderer: Renderer[T]) =
     new Renderer[Seq[T]] {
-      def render[R <: Rendering](r: R, value: Seq[T]): r.type = {
-        @tailrec def recI(values: IndexedSeq[T], ix: Int = 0): r.type =
+      def render[R <: Rendering](r: R, value: Seq[T]): R = {
+        @tailrec def recI(values: IndexedSeq[T], ix: Int = 0): R =
           if (ix < values.size) {
             if (ix > 0) sRenderer.render(r, separator)
             tRenderer.render(r, values(ix))
             recI(values, ix + 1)
           } else r
 
-        @tailrec def recL(remaining: LinearSeq[T]): r.type =
+        @tailrec def recL(remaining: LinearSeq[T]): R =
           if (remaining.nonEmpty) {
             if (remaining ne value) sRenderer.render(r, separator)
             tRenderer.render(r, remaining.head)
@@ -137,7 +137,7 @@ trait Rendering {
     rec()
   }
 
-  def ~~[T](value: T)(implicit ev: Renderer[T]): this.type = ev.render(this, value)
+  def ~~[T](value: T)(implicit ev: Renderer[T]): this.type = ev.render(this, value).asInstanceOf[this.type]
 
   def ~~#(s: String): this.type =
     if (CharPredicate.HttpToken.matchAll(s)) this ~~ s else ~~('"').putEscaped(s) ~~ '"'
@@ -160,7 +160,7 @@ object Rendering {
   case object `, ` extends SingletonValueRenderable // default separator
 
   case object CrLf extends Renderable {
-    def render[R <: Rendering](r: R): r.type = r ~~ '\r' ~~ '\n'
+    def render[R <: Rendering](r: R): R = r ~~ '\r' ~~ '\n'
   }
 }
 

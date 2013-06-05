@@ -25,7 +25,7 @@ import scala.annotation.tailrec
 sealed trait HttpCredentials extends ValueRenderable
 
 case class BasicHttpCredentials(username: String, password: String) extends HttpCredentials {
-  def render[R <: Rendering](r: R): r.type = {
+  def render[R <: Rendering](r: R): R = {
     val userPass = username + ':' + password
     val bytes = userPass.getBytes(`ISO-8859-1`.nioCharset)
     val cookie = Base64.rfc2045.encodeToChar(bytes, false)
@@ -45,13 +45,13 @@ object BasicHttpCredentials {
 }
 
 case class OAuth2BearerToken(token: String) extends HttpCredentials {
-  def render[R <: Rendering](r: R): r.type = r ~~ "Bearer " ~~ token
+  def render[R <: Rendering](r: R): R = r ~~ "Bearer " ~~ token
 }
 
 case class GenericHttpCredentials(scheme: String, token: String,
                                   params: Map[String, String] = Map.empty) extends HttpCredentials {
 
-  def render[R <: Rendering](r: R): r.type = {
+  def render[R <: Rendering](r: R): R = {
     r ~~ scheme
     if (!token.isEmpty) r ~~ ' ' ~~ token
     if (params.nonEmpty)

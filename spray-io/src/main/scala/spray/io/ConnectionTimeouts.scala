@@ -16,7 +16,7 @@
 
 package spray.io
 
-import scala.concurrent.duration.Duration
+import akka.util.Duration
 import akka.io.Tcp
 import spray.util.requirePositiveOrUndefined
 import System.{ currentTimeMillis ⇒ now }

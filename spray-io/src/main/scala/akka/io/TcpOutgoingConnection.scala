@@ -11,7 +11,7 @@ import akka.io.Tcp._
 import java.io.IOException
 import java.nio.channels.{ SelectionKey, SocketChannel }
 import scala.collection.immutable
-import scala.concurrent.duration.Duration
+import akka.util.Duration
 import java.net.{ ConnectException, SocketTimeoutException }
 
 /**
@@ -50,7 +50,7 @@ private[io] class TcpOutgoingConnection(_tcp: TcpExt,
       case ChannelConnectable ⇒
         if (timeout.isDefined) context.setReceiveTimeout(Duration.Undefined) // Clear the timeout
         try {
-          channel.finishConnect() || (throw new ConnectException(s"Connection to [$remoteAddress] failed"))
+          channel.finishConnect() || (throw new ConnectException("Connection to [" + remoteAddress + "] failed"))
           log.debug("Connection established to [{}]", remoteAddress)
           completeConnect(registration, commander, options)
         } catch {
@@ -62,7 +62,7 @@ private[io] class TcpOutgoingConnection(_tcp: TcpExt,
 
       case ReceiveTimeout ⇒
         if (timeout.isDefined) context.setReceiveTimeout(Duration.Undefined) // Clear the timeout
-        val failure = new SocketTimeoutException(s"Connection to [$remoteAddress] timed out")
+        val failure = new SocketTimeoutException("Connection to [" + remoteAddress + "] timed out")
         if (tcp.Settings.TraceLogging) log.debug("Could not establish connection due to {}", failure)
         closedMessage = TcpConnection.CloseInformation(Set(commander), connect.failureMessage)
         throw failure

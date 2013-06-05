@@ -11,10 +11,9 @@ import java.nio.channels.{ FileChannel, SocketChannel }
 import java.nio.ByteBuffer
 import scala.annotation.tailrec
 import scala.collection.immutable
-import scala.util.control.NonFatal
-import scala.concurrent.duration._
+import akka.util.{ Duration, NonFatal, ByteString }
+import akka.util.duration._
 import akka.actor._
-import akka.util.ByteString
 import akka.io.Inet.SocketOption
 import akka.io.Tcp._
 import akka.io.SelectionHandler._

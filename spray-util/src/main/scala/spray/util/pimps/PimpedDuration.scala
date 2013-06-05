@@ -16,7 +16,7 @@
 
 package spray.util.pimps
 
-import scala.concurrent.duration.Duration
+import akka.util.Duration
 
 class PimpedDuration(underlying: Duration) {
 

@@ -54,7 +54,7 @@ case class DateTime private (year: Int, // the year
   /**
    * `yyyy-mm-ddThh:mm:ss`
    */
-  def render[R <: Rendering](r: R): r.type = renderIsoDateTimeString(r)
+  def render[R <: Rendering](r: R): R = renderIsoDateTimeString(r)
 
   /**
    * `yyyy-mm-ddThh:mm:ss`
@@ -64,7 +64,7 @@ case class DateTime private (year: Int, // the year
   /**
    * `yyyy-mm-dd`
    */
-  def renderIsoDate[R <: Rendering](r: R): r.type = put_##(put_##(r ~~ year ~~ '-', month) ~~ '-', day)
+  def renderIsoDate[R <: Rendering](r: R): R = put_##(put_##(r ~~ year ~~ '-', month) ~~ '-', day)
 
   /**
    * `yyyy-mm-dd`
@@ -74,7 +74,7 @@ case class DateTime private (year: Int, // the year
   /**
    * `yyyy-mm-ddThh:mm:ss`
    */
-  def renderIsoDateTimeString[R <: Rendering](r: R): r.type =
+  def renderIsoDateTimeString[R <: Rendering](r: R): R =
     put_##(put_##(put_##(renderIsoDate(r) ~~ 'T', hour) ~~ ':', minute) ~~ ':', second)
 
   /**
@@ -85,7 +85,7 @@ case class DateTime private (year: Int, // the year
   /**
    * `yyyy-mm-dd hh:mm:ss`
    */
-  def renderIsoLikeDateTimeString[R <: Rendering](r: R): r.type =
+  def renderIsoLikeDateTimeString[R <: Rendering](r: R): R =
     put_##(put_##(put_##(renderIsoDate(r) ~~ ' ', hour) ~~ ':', minute) ~~ ':', second)
 
   /**
@@ -96,7 +96,7 @@ case class DateTime private (year: Int, // the year
   /**
    * RFC1123 date string, e.g. `Sun, 06 Nov 1994 08:49:37 GMT`
    */
-  def renderRfc1123DateTimeString[R <: Rendering](r: R): r.type =
+  def renderRfc1123DateTimeString[R <: Rendering](r: R): R =
     put_##(put_##(put_##(put_##(r ~~ weekdayStr ~~ ',' ~~ ' ', day) ~~ ' ' ~~ monthStr ~~ ' ' ~~ year ~~ ' ', hour) ~~ ':', minute) ~~ ':', second) ~~ " GMT"
 
   /**
@@ -104,7 +104,7 @@ case class DateTime private (year: Int, // the year
    */
   def toRfc1123DateTimeString = renderRfc1123DateTimeString(new StringRendering).get
 
-  private def put_##[R <: Rendering](r: R, i: Int): r.type = r ~~ (i / 10 + '0').toChar ~~ (i % 10 + '0').toChar
+  private def put_##[R <: Rendering](r: R, i: Int): R = r ~~ (i / 10 + '0').toChar ~~ (i % 10 + '0').toChar
 
   def compare(that: DateTime): Int = math.signum(clicks - that.clicks).toInt
 

@@ -17,10 +17,10 @@
 package spray.util
 package pimps
 
-import scala.concurrent.{ ExecutionContext, Promise, Await, Future }
-import scala.concurrent.duration._
+import akka.dispatch.{ ExecutionContext, Promise, Await, Future }
+import akka.util.duration._
 import akka.actor.ActorRefFactory
-import akka.util.Timeout
+import akka.util.{ FiniteDuration, Timeout }
 
 class PimpedFuture[+A](underlying: Future[A]) {
 

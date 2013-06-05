@@ -18,7 +18,6 @@ package spray.http
 
 import java.nio.charset.Charset
 import scala.annotation.tailrec
-import scala.reflect.{ classTag, ClassTag }
 import HttpHeaders._
 import HttpCharsets._
 import java.util
@@ -100,8 +99,8 @@ sealed abstract class HttpMessage extends HttpMessageStart with HttpMessageEnd {
     case None    ⇒ HttpEncodings.identity
   }
 
-  def header[T <: HttpHeader: ClassTag]: Option[T] = {
-    val erasure = classTag[T].runtimeClass
+  def header[T <: HttpHeader: ClassManifest]: Option[T] = {
+    val erasure = classManifest[T].erasure
     @tailrec def next(headers: List[HttpHeader]): Option[T] =
       if (headers.isEmpty) None
       else if (erasure.isInstance(headers.head)) Some(headers.head.asInstanceOf[T]) else next(headers.tail)

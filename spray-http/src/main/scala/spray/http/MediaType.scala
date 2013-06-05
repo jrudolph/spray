@@ -106,8 +106,8 @@ object MediaType {
   def custom(mainType: String, subType: String, compressible: Boolean = false, binary: Boolean = false,
              fileExtensions: Seq[String] = Nil): MediaType =
     new MediaType(mainType + '/' + subType)(mainType, subType, compressible, binary, fileExtensions) with MediaRanges.MainTypeBased {
-      def withCompressible = custom(mainType, subType, compressible = true, binary, fileExtensions)
-      def withBinary = custom(mainType, subType, compressible, binary = true, fileExtensions)
+      def withCompressible = custom(mainType, subType, true, binary, fileExtensions)
+      def withBinary = custom(mainType, subType, compressible, true, fileExtensions)
     }
 
   def custom(value: String): MediaType = {
@@ -125,7 +125,7 @@ object MediaTypes extends ObjectRegistry[(String, String), MediaType] {
     @tailrec def registerFileExtension(ext: String): Unit = {
       val lcExt = ext.toLowerCase
       val current = extensionMap.get
-      require(!current.contains(lcExt), s"Extension '$ext' clash: media-types '${current(lcExt)}' and '$mediaType'")
+      require(!current.contains(lcExt), "Extension '" + ext + "' clash: media-types '" + current(lcExt) + "' and '" + mediaType + "'")
       val updated = current.updated(lcExt, mediaType)
       if (!extensionMap.compareAndSet(current, updated)) registerFileExtension(ext)
     }
@@ -171,12 +171,13 @@ object MediaTypes extends ObjectRegistry[(String, String), MediaType] {
     _.forall(util.Arrays.binarySearch(rfc2045alphabet, _) >= 0)
   }
 
+  def valueOfMultipartMediaType(subType: String, boundary: Option[String]) = boundary match {
+    case None                                   ⇒ "multipart/" + subType
+    case Some(b) if containsOnlyRFC2045chars(b) ⇒ "multipart/" + subType + "; boundary=" + b
+    case Some(b)                                ⇒ "multipart/" + subType + "; boundary=\"" + b + '"'
+  }
   class MultipartMediaType(subType: String, val boundary: Option[String]) extends MediaType(
-    value = boundary match {
-      case None                                   ⇒ "multipart/" + subType
-      case Some(b) if containsOnlyRFC2045chars(b) ⇒ "multipart/" + subType + "; boundary=" + b
-      case Some(b)                                ⇒ "multipart/" + subType + "; boundary=\"" + b + '"'
-    })("multipart", subType, compressible = true, binary = false, fileExtensions = Nil) {
+    value = valueOfMultipartMediaType(subType, boundary))("multipart", subType, compressible = true, binary = false, fileExtensions = Nil) {
     override def isMultipart = true
     override def matches(that: MediaType): Boolean = that match {
       case x: MultipartMediaType ⇒ x.subType == this.subType

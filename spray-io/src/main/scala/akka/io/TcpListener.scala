@@ -7,7 +7,7 @@ package akka.io
 import java.nio.channels.{ SocketChannel, SelectionKey, ServerSocketChannel }
 import java.net.InetSocketAddress
 import scala.annotation.tailrec
-import scala.util.control.NonFatal
+import akka.util.NonFatal
 import akka.actor.{ Props, ActorLogging, ActorRef, Actor }
 import akka.io.SelectionHandler._
 import akka.io.Tcp._
@@ -50,7 +50,7 @@ private[io] class TcpListener(selectorRouter: ActorRef,
       socket.bind(bind.localAddress, bind.backlog)
       val ret = socket.getLocalSocketAddress match {
         case isa: InetSocketAddress ⇒ isa
-        case x                      ⇒ throw new IllegalArgumentException(s"bound to unknown SocketAddress [$x]")
+        case x                      ⇒ throw new IllegalArgumentException("bound to unknown SocketAddress [" + x + "]")
       }
       channelRegistry.register(channel, SelectionKey.OP_ACCEPT)
       log.debug("Successfully bound to {}", ret)

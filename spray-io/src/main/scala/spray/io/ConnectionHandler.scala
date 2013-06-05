@@ -51,7 +51,7 @@ trait ConnectionHandler extends Actor with SprayActorLogging {
   }
 
   def running[C <: PipelineContext](tcpConnection: ActorRef, pipelineStage: RawPipelineStage[C],
-                                    pipelineContext: C, keepOpenOnPeerClosed: Boolean = false): Receive = {
+                                    pipelineContext: C, keepOpenOnPeerClosed: Boolean): Receive = {
     val stage = pipelineStage(pipelineContext,
       baseCommandPipeline(tcpConnection),
       baseEventPipeline(keepOpenOnPeerClosed))

@@ -29,7 +29,7 @@ object CacheDirective {
 
   private case class CustomCacheDirective(name: String, content: Option[String])
       extends RequestDirective with ResponseDirective with ValueRenderable {
-    def render[R <: Rendering](r: R): r.type = content match {
+    def render[R <: Rendering](r: R): R = content match {
       case Some(s) ⇒ r ~~ name ~~ '=' ~~# s
       case None    ⇒ r ~~ name
     }
@@ -48,18 +48,18 @@ object CacheDirectives {
   case object `no-transform` extends SingletonValueRenderable with RequestDirective with ResponseDirective
 
   case class `max-age`(deltaSeconds: Long) extends RequestDirective with ResponseDirective with ValueRenderable {
-    def render[R <: Rendering](r: R): r.type = r ~~ productPrefix ~~ '=' ~~ deltaSeconds
+    def render[R <: Rendering](r: R): R = r ~~ productPrefix ~~ '=' ~~ deltaSeconds
   }
 
   /* Requests only */
   case class `max-stale`(deltaSeconds: Option[Long]) extends RequestDirective with ValueRenderable {
-    def render[R <: Rendering](r: R): r.type = deltaSeconds match {
+    def render[R <: Rendering](r: R): R = deltaSeconds match {
       case Some(s) ⇒ r ~~ productPrefix ~~ '=' ~~ s
       case None    ⇒ r ~~ productPrefix
     }
   }
   case class `min-fresh`(deltaSeconds: Long) extends RequestDirective with ValueRenderable {
-    def render[R <: Rendering](r: R): r.type = r ~~ productPrefix ~~ '=' ~~ deltaSeconds
+    def render[R <: Rendering](r: R): R = r ~~ productPrefix ~~ '=' ~~ deltaSeconds
   }
   case object `only-if-cached` extends SingletonValueRenderable with RequestDirective
 
@@ -68,10 +68,10 @@ object CacheDirectives {
 
   abstract class FieldNamesDirective extends Product with ValueRenderable {
     def fieldNames: Seq[String]
-    def render[R <: Rendering](r: R): r.type =
+    def render[R <: Rendering](r: R): R =
       if (fieldNames.nonEmpty) {
         r ~~ productPrefix ~~ '=' ~~ '"'
-        @tailrec def rec(i: Int = 0): r.type =
+        @tailrec def rec(i: Int = 0): R =
           if (i < fieldNames.length) {
             if (i > 0) r ~~ ','
             r.putEscaped(fieldNames(i))
@@ -85,6 +85,6 @@ object CacheDirectives {
   case object `must-revalidate` extends SingletonValueRenderable with ResponseDirective
   case object `proxy-revalidate` extends SingletonValueRenderable with ResponseDirective
   case class `s-maxage`(deltaSeconds: Long) extends ResponseDirective with ValueRenderable {
-    def render[R <: Rendering](r: R): r.type = r ~~ productPrefix ~~ '=' ~~ deltaSeconds
+    def render[R <: Rendering](r: R): R = r ~~ productPrefix ~~ '=' ~~ deltaSeconds
   }
 }

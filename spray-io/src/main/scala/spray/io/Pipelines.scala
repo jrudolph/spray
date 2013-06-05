@@ -16,9 +16,7 @@
 
 package spray.io
 
-import language.experimental.macros
 import java.net.InetSocketAddress
-import scala.reflect.macros.{ Context ⇒ MacroContext }
 import akka.actor.ActorContext
 import akka.event.LoggingAdapter
 import akka.io.Tcp
@@ -105,16 +103,6 @@ trait RawPipelineStage[-C <: PipelineContext] { left ⇒
           commandPL = (if (leftPL.commandPipeline eq cplProxyPoint) rightPL else leftPL).commandPipeline,
           eventPL = (if (rightPL.eventPipeline eq eplProxyPoint) leftPL else rightPL).eventPipeline)
       }
-    }
-
-  def ?(condition: Boolean): RawPipelineStage[C] = macro RawPipelineStage.enabled[C]
-}
-
-object RawPipelineStage {
-  type PipelineStageContext[C <: PipelineContext] = MacroContext { type PrefixType = RawPipelineStage[C] }
-  def enabled[C <: PipelineContext](c: PipelineStageContext[C])(condition: c.Expr[Boolean]) =
-    c.universe.reify {
-      if (condition.splice) c.prefix.splice else EmptyPipelineStage
     }
 }
 

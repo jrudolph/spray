@@ -25,7 +25,7 @@ sealed abstract class ContentTypeRange extends ValueRenderable {
 
 object ContentTypeRange {
   private case class Impl(mediaRange: MediaRange, charsetRange: HttpCharsetRange) extends ContentTypeRange {
-    def render[R <: Rendering](r: R): r.type = charsetRange match {
+    def render[R <: Rendering](r: R): R = charsetRange match {
       case HttpCharsets.`*` ⇒ r ~~ mediaRange
       case x: HttpCharset   ⇒ r ~~ mediaRange ~~ ContentType.`; charset=` ~~ charsetRange
     }
@@ -36,7 +36,7 @@ object ContentTypeRange {
 }
 
 case class ContentType(mediaType: MediaType, definedCharset: Option[HttpCharset]) extends ContentTypeRange {
-  def render[R <: Rendering](r: R): r.type = definedCharset match {
+  def render[R <: Rendering](r: R): R = definedCharset match {
     case Some(cs) ⇒ r ~~ mediaType ~~ ContentType.`; charset=` ~~ cs
     case _        ⇒ r ~~ mediaType
   }

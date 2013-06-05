@@ -4,7 +4,7 @@
 
 package akka.io
 
-import scala.util.control.NonFatal
+import akka.util.NonFatal
 import akka.actor._
 import akka.routing.RandomRouter
 import akka.io.SelectionHandler.WorkerForCommand

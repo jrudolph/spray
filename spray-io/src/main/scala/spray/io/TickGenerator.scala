@@ -16,8 +16,9 @@
 
 package spray.io
 
-import scala.concurrent.duration._
+import akka.util.duration._
 import akka.io.Tcp
+import akka.util.{ FiniteDuration, Duration }
 
 //# source-quote
 object TickGenerator {

@@ -5,7 +5,7 @@ package akka.io
 
 import java.nio.channels.DatagramChannel
 import scala.collection.immutable
-import scala.util.control.NonFatal
+import akka.util.NonFatal
 import akka.io.Inet.SocketOption
 import akka.io.Udp._
 import akka.actor._

@@ -17,7 +17,7 @@
 package spray.util.pimps
 
 import com.typesafe.config.Config
-import scala.concurrent.duration.Duration
+import akka.util.Duration
 
 class PimpedConfig(underlying: Config) {
 

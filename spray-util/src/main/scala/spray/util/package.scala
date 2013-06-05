@@ -16,17 +16,15 @@
 
 package spray
 
-import scala.language.experimental.macros
-
 import java.nio.ByteBuffer
 import java.io.{ InputStream, File }
 import java.nio.charset.Charset
 import com.typesafe.config.Config
-import scala.concurrent.duration.Duration
+import akka.util.Duration
 import scala.collection.LinearSeq
 import scala.util.matching.Regex
-import scala.util.control.NonFatal
-import scala.concurrent.Future
+import akka.util.NonFatal
+import akka.dispatch.Future
 import akka.actor._
 import util.pimps._
 
@@ -44,7 +42,10 @@ package object util {
   def tryOrElse[A, B >: A](body: ⇒ A, onError: Throwable ⇒ B): B =
     try body catch { case NonFatal(e) ⇒ onError(e) }
 
-  def requirePositiveOrUndefined(duration: Duration): Duration = macro Macros.requirePositiveOrUndefined
+  def requirePositiveOrUndefined(duration: Duration): Duration =
+    if (duration <= Duration.Zero)
+      throw new IllegalArgumentException("requirement failed: duration must be > 0 or 'infinite'")
+    else duration
 
   def actorSystem(implicit refFactory: ActorRefFactory): ExtendedActorSystem =
     refFactory match {

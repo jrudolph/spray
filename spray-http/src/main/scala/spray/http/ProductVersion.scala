@@ -20,7 +20,7 @@ package spray.http
 import spray.http.parser.HttpParser
 
 case class ProductVersion(product: String = "", version: String = "", comment: String = "") extends ValueRenderable {
-  def render[R <: Rendering](r: R): r.type = {
+  def render[R <: Rendering](r: R): R = {
     r ~~ product
     if (!version.isEmpty) r ~~ '/' ~~ version
     if (!comment.isEmpty) {
@@ -35,6 +35,6 @@ object ProductVersion {
   def parseMultiple(string: String): Seq[ProductVersion] =
     parser.HttpParser.parse(HttpParser.ProductVersionComments, string) match {
       case Right(x)   ⇒ x
-      case Left(info) ⇒ throw new IllegalArgumentException(s"'$string' is not a legal sequence of ProductVersions: ${info.formatPretty}")
+      case Left(info) ⇒ throw new IllegalArgumentException("'" + string + "' is not a legal sequence of ProductVersions: " + info.formatPretty)
     }
 }

@@ -21,7 +21,7 @@ sealed abstract class LanguageRange extends ValueRenderable {
   def primaryTag: String
   def subTags: Seq[String]
   def matches(lang: Language): Boolean
-  def render[R <: Rendering](r: R): r.type = {
+  def render[R <: Rendering](r: R): R = {
     r ~~ primaryTag
     if (subTags.nonEmpty) subTags.foreach(r ~~ '-' ~~ _)
     r

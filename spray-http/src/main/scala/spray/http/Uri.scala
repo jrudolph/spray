@@ -37,7 +37,7 @@ sealed abstract case class Uri(scheme: String, authority: Authority, path: Path,
   def isRelative: Boolean = scheme.isEmpty
   def isEmpty: Boolean
 
-  def inspect: String = s"Uri(scheme=$scheme, authority=$authority, path=$path, query=$query, fragment=$fragment)"
+  def inspect: String = "Uri(scheme=" + scheme + ", authority=" + authority + ", path=" + path + ", query=" + query + ", fragment=" + fragment + ")"
 
   /**
    * Returns a copy of this Uri with the given components.
@@ -54,7 +54,7 @@ sealed abstract case class Uri(scheme: String, authority: Authority, path: Path,
   def resolvedAgainst(base: Uri): Uri =
     resolve(scheme, authority.userinfo, authority.host, authority.port, path, query, fragment, base)
 
-  def render[R <: Rendering](r: R): r.type = render(r, UTF8)
+  def render[R <: Rendering](r: R): R = render(r, UTF8)
 
   /**
    * Renders this Uri into the given Renderer as defined by http://tools.ietf.org/html/rfc3986.
@@ -62,7 +62,7 @@ sealed abstract case class Uri(scheme: String, authority: Authority, path: Path,
    * produce percent-encoded representations of potentially existing non-ASCII characters in the
    * different components.
    */
-  def render[R <: Rendering](r: R, charset: Charset): r.type = {
+  def render[R <: Rendering](r: R, charset: Charset): R = {
     renderWithoutFragment(r, charset)
     if (fragment.isDefined) encode(r ~~ '#', fragment.get, charset, QUERY_FRAGMENT_CHAR)
     r
@@ -75,7 +75,7 @@ sealed abstract case class Uri(scheme: String, authority: Authority, path: Path,
    * produce percent-encoded representations of potentially existing non-ASCII characters in the
    * different components.
    */
-  def renderWithoutFragment[R <: Rendering](r: R, charset: Charset): r.type = {
+  def renderWithoutFragment[R <: Rendering](r: R, charset: Charset): R = {
     if (isAbsolute) r ~~ scheme ~~ ':'
     authority.render(r, scheme, charset)
     path.render(r, charset, encodeFirstSegmentColons = isRelative)
@@ -236,8 +236,8 @@ object Uri {
 
   case class Authority(host: Host, port: Int = 0, userinfo: String = "") extends ToStringRenderable {
     def isEmpty = host.isEmpty
-    def render[R <: Rendering](r: R): r.type = render(r, "", UTF8)
-    def render[R <: Rendering](r: R, scheme: String, charset: Charset): r.type =
+    def render[R <: Rendering](r: R): R = render(r, "", UTF8)
+    def render[R <: Rendering](r: R, scheme: String, charset: Charset): R =
       if (isEmpty) r else {
         r ~~ '/' ~~ '/'
         if (!userinfo.isEmpty) encode(r, userinfo, charset, UNRESERVED | SUB_DELIM | COLON) ~~ '@'
@@ -267,7 +267,7 @@ object Uri {
       def address: String = ""
       def isEmpty = true
       def toOption = None
-      def render[R <: Rendering](r: R): r.type = r
+      def render[R <: Rendering](r: R): R = r
     }
     def apply(string: String, mode: Uri.ParsingMode = Uri.ParsingMode.Relaxed): Host =
       if (!string.isEmpty) {
@@ -283,14 +283,14 @@ object Uri {
   }
   case class IPv4Host(address: String) extends NonEmptyHost {
     require(!address.isEmpty, "address must not be empty")
-    def render[R <: Rendering](r: R): r.type = r ~~ address
+    def render[R <: Rendering](r: R): R = r ~~ address
   }
   case class IPv6Host(address: String) extends NonEmptyHost {
     require(!address.isEmpty, "address must not be empty")
-    def render[R <: Rendering](r: R): r.type = r ~~ '[' ~~ address ~~ ']'
+    def render[R <: Rendering](r: R): R = r ~~ '[' ~~ address ~~ ']'
   }
   case class NamedHost(address: String) extends NonEmptyHost {
-    def render[R <: Rendering](r: R): r.type = encode(r, address, UTF8, UNRESERVED | SUB_DELIM)
+    def render[R <: Rendering](r: R): R = encode(r, address, UTF8, UNRESERVED | SUB_DELIM)
   }
 
   sealed abstract class Path extends ToStringRenderable {
@@ -302,8 +302,8 @@ object Uri {
     def tail: Path
     def length: Int
     def charCount: Int
-    def render[R <: Rendering](r: R): r.type = render(r, UTF8, encodeFirstSegmentColons = false)
-    def render[R <: Rendering](r: R, charset: Charset, encodeFirstSegmentColons: Boolean): r.type
+    def render[R <: Rendering](r: R): R = render(r, UTF8, encodeFirstSegmentColons = false)
+    def render[R <: Rendering](r: R, charset: Charset, encodeFirstSegmentColons: Boolean): R
     def ::(c: Char): Path = { require(c == '/'); Path.Slash(this) }
     def ::(segment: String): Path
     def +(pathString: String): Path = this ++ Path(pathString)
@@ -341,7 +341,7 @@ object Uri {
       def tail: Path = throw new UnsupportedOperationException("tail of empty path")
       def length = 0
       def charCount = 0
-      def render[R <: Rendering](r: R, charset: Charset, encodeFirstSegmentColons: Boolean): r.type = r
+      def render[R <: Rendering](r: R, charset: Charset, encodeFirstSegmentColons: Boolean): R = r
       def ::(segment: String) = if (segment.isEmpty) this else Segment(segment, this)
       def ++(suffix: Path) = suffix
       def reverseAndPrependTo(prefix: Path) = prefix
@@ -353,7 +353,7 @@ object Uri {
       def isEmpty = false
       def length: Int = tail.length + 1
       def charCount: Int = tail.charCount + 1
-      def render[R <: Rendering](r: R, charset: Charset, encodeFirstSegmentColons: Boolean): r.type =
+      def render[R <: Rendering](r: R, charset: Charset, encodeFirstSegmentColons: Boolean): R =
         tail.render(r ~~ '/', charset, encodeFirstSegmentColons = false)
       def ::(segment: String) = if (segment.isEmpty) this else Segment(segment, this)
       def ++(suffix: Path) = Slash(tail ++ suffix)
@@ -367,7 +367,7 @@ object Uri {
       def startsWithSegment = true
       def length: Int = tail.length + 1
       def charCount: Int = head.length + tail.charCount
-      def render[R <: Rendering](r: R, charset: Charset, encodeFirstSegmentColons: Boolean): r.type = {
+      def render[R <: Rendering](r: R, charset: Charset, encodeFirstSegmentColons: Boolean): R = {
         val keep = if (encodeFirstSegmentColons) PATH_SEGMENT_CHAR & ~COLON else PATH_SEGMENT_CHAR
         tail.render(encode(r, head, charset, keep), charset, encodeFirstSegmentColons = false)
       }
@@ -404,11 +404,11 @@ object Uri {
         if (q.isEmpty) map else append(map.updated(q.key, q.value :: map.getOrElse(q.key, Nil)), q.tail)
       append(Map.empty, this)
     }
-    def render[R <: Rendering](r: R): r.type = render(r, UTF8)
-    def render[R <: Rendering](r: R, charset: Charset): r.type = {
+    def render[R <: Rendering](r: R): R = render(r, UTF8)
+    def render[R <: Rendering](r: R, charset: Charset): R = {
       def enc(r: Rendering, s: String): r.type =
-        encode(r, s, charset, QUERY_FRAGMENT_CHAR & ~(AMP | EQUAL | PLUS), replaceSpaces = true)
-      @tailrec def append(q: Query): r.type =
+        encode(r, s, charset, QUERY_FRAGMENT_CHAR & ~(AMP | EQUAL | PLUS), replaceSpaces = true).asInstanceOf[r.type]
+      @tailrec def append(q: Query): R =
         if (!q.isEmpty) {
           if (q ne this) r ~~ '&'
           enc(r, q.key)
@@ -513,9 +513,9 @@ object Uri {
     else Impl(scheme, userinfo, host, port, collapseDotSegments(path), query, fragment)
   }
 
-  private[http] def encode(r: Rendering, string: String, charset: Charset, keep: Int,
-                           replaceSpaces: Boolean = false): r.type = {
-    @tailrec def rec(ix: Int = 0): r.type = {
+  private[http] def encode[R <: Rendering](r: R, string: String, charset: Charset, keep: Int,
+                                           replaceSpaces: Boolean = false): R = {
+    @tailrec def rec(ix: Int = 0): R = {
       def appendEncoded(byte: Byte): Unit = r ~~ '%' ~~ hexDigit(byte >>> 4) ~~ hexDigit(byte)
       if (ix < string.length) {
         string.charAt(ix) match {
@@ -583,7 +583,7 @@ object Uri {
     verify() match {
       case -2 ⇒ scheme.toLowerCase
       case -1 ⇒ scheme
-      case ix ⇒ fail(s"Invalid URI scheme, unexpected character at pos $ix ('${scheme.charAt(ix)}')")
+      case ix ⇒ fail("Invalid URI scheme, unexpected character at pos $ix ('" + scheme.charAt(ix) + "')")
     }
   }
 

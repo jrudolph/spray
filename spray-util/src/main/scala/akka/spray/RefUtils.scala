@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2011-2013 spray.io
+ * Copyright (C) 2011-2012 spray.io
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -38,4 +38,12 @@ object RefUtils {
       case x: InternalActorRef ⇒ x
       case x                   ⇒ throw new IllegalArgumentException("Unsupported ActorRef " + x)
     }
+
+  def actorSystem(refFactory: ActorRefFactory): ExtendedActorSystem =
+    refFactory match {
+      case x: ActorContext        ⇒ actorSystem(x.system)
+      case x: ExtendedActorSystem ⇒ x
+      case x                      ⇒ throw new IllegalArgumentException("Unsupported ActorRefFactory implementation:" + refFactory)
+    }
+
 }

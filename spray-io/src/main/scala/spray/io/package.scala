@@ -24,10 +24,16 @@ package object io {
   type Command = Tcp.Command
   type Event = Tcp.Event
   type PipelineStage = RawPipelineStage[PipelineContext]
+
+  implicit def pimpBooleanWithOptionalPipelineStageOperator(condition: Boolean) = new PimpedBoolean(condition)
+  class PimpedBoolean(condition: Boolean) {
+    // unfortunately we cannot use the nicer right-associative `?:` operator due to
+    // https://issues.scala-lang.org/browse/SI-1980
+    def ?(stage: ⇒ PipelineStage) = if (condition) stage else EmptyPipelineStage
+  }
 }
 
 package io {
-
   object Pipeline {
     val Uninitialized: Pipeline[Any] = _ ⇒ throw new RuntimeException("Pipeline not yet initialized")
 

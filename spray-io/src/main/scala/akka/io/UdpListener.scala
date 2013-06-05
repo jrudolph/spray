@@ -8,7 +8,7 @@ import java.nio.ByteBuffer
 import java.nio.channels.DatagramChannel
 import java.nio.channels.SelectionKey._
 import scala.annotation.tailrec
-import scala.util.control.NonFatal
+import akka.util.NonFatal
 import akka.actor.{ ActorLogging, Actor, ActorRef }
 import akka.util.ByteString
 import akka.io.SelectionHandler._
@@ -40,7 +40,7 @@ private[io] class UdpListener(val udp: UdpExt,
       socket.bind(bind.localAddress)
       val ret = socket.getLocalSocketAddress match {
         case isa: InetSocketAddress ⇒ isa
-        case x                      ⇒ throw new IllegalArgumentException(s"bound to unknown SocketAddress [$x]")
+        case x                      ⇒ throw new IllegalArgumentException("bound to unknown SocketAddress [" + x + "]")
       }
       channelRegistry.register(channel, OP_READ)
       log.debug("Successfully bound to [{}]", ret)

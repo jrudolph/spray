@@ -23,7 +23,7 @@ import org.parboiled.errors.ParsingException
 // direct implementation of http://www.w3.org/Protocols/rfc2616/rfc2616-sec3.html
 private[parser] trait ProtocolParameterRules {
   this: Parser ⇒
-  import BasicRules._
+  import BasicRules.{ toRule ⇒ _, _ }
 
   /* 3.1 HTTP Version */
 

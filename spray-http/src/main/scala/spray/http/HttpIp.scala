@@ -20,7 +20,7 @@ package spray.http
 import java.net.InetAddress
 
 case class HttpIp(ip: InetAddress) extends ValueRenderable {
-  def render[R <: Rendering](r: R): r.type = r ~~ ip.getHostAddress
+  def render[R <: Rendering](r: R): R = r ~~ ip.getHostAddress
 }
 
 object HttpIp {

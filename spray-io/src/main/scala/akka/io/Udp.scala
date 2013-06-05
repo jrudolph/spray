@@ -202,7 +202,7 @@ object Udp extends ExtensionKey[UdpExt] {
 
     private[this] def getIntBytes(path: String): Int = {
       val size = getBytes(path)
-      require(size < Int.MaxValue, s"$path must be < 2 GiB")
+      require(size < Int.MaxValue, path + " must be < 2 GiB")
       size.toInt
     }
   }
@@ -238,7 +238,6 @@ object UdpMessage {
   import Udp._
   import java.lang.{ Iterable ⇒ JIterable }
   import scala.collection.JavaConverters._
-  import language.implicitConversions
 
   /**
    * Each [[Send]] can optionally request a positive acknowledgment to be sent
@@ -282,7 +281,7 @@ object UdpMessage {
    * message, or the manager will reply with a [[CommandFailed]] message.
    */
   def bind(handler: ActorRef, endpoint: InetSocketAddress, options: JIterable[SocketOption]): Command =
-    Bind(handler, endpoint, options.asScala.to)
+    Bind(handler, endpoint, options.asScala.toIndexedSeq)
   /**
    * Bind without specifying options.
    */
@@ -305,7 +304,7 @@ object UdpMessage {
    * The “simple sender” will not stop itself, you will have to send it a [[akka.actor.PoisonPill]]
    * when you want to close the socket.
    */
-  def simpleSender(options: JIterable[SocketOption]): Command = SimpleSender(options.asScala.to)
+  def simpleSender(options: JIterable[SocketOption]): Command = SimpleSender(options.asScala.toIndexedSeq)
   /**
    * Retrieve a simple sender without specifying options.
    */

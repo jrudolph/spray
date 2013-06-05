@@ -20,7 +20,6 @@ import java.nio.channels.ServerSocketChannel
 import java.net.{ InetAddress, InetSocketAddress }
 import com.typesafe.config.{ ConfigFactory, Config }
 import scala.collection.JavaConverters._
-import scala.reflect.{ classTag, ClassTag }
 import akka.actor._
 
 object Utils {
@@ -52,8 +51,8 @@ object Utils {
     }
     system.eventStream.subscribe(eventStreamLogger, channel)
   }
-  def installEventStreamLoggerFor[T](implicit ct: ClassTag[T], system: ActorSystem): Unit =
-    installEventStreamLoggerFor(classTag[T].runtimeClass)
+  def installEventStreamLoggerFor[T](implicit ct: ClassManifest[T], system: ActorSystem): Unit =
+    installEventStreamLoggerFor(classManifest[T].erasure)
 
   def installDebuggingEventStreamLoggers()(implicit refFactory: ActorRefFactory): Unit = {
     implicit val system = actorSystem

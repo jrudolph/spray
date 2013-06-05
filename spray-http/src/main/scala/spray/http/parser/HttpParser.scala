@@ -40,7 +40,7 @@ object HttpParser extends Parser with ProtocolParameterRules with AdditionalRule
     with WwwAuthenticateHeader {
 
   // all string literals automatically receive a trailing optional whitespace
-  override implicit def toRule(string: String): Rule0 =
+  override def toRule(string: String): Rule0 =
     super.toRule(string) ~ BasicRules.OptWS
 
   // seq of pretty header names and map of the *lowercase* header names to the respective parser rule
