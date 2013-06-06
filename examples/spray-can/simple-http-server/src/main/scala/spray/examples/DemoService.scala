@@ -1,6 +1,6 @@
 package spray.examples
 
-import scala.concurrent.duration._
+import akka.util.duration._
 import akka.pattern.ask
 import akka.util.Timeout
 import akka.actor._
@@ -117,7 +117,7 @@ class DemoService extends Actor with SprayActorLogging {
 
       case Ok(remaining) =>
         log.info("Sending response chunk ...")
-        context.system.scheduler.scheduleOnce(100 millis span) {
+        context.system.scheduler.scheduleOnce(100 millis) {
           client ! MessageChunk(DateTime.now.toIsoDateTimeString + ", ").withAck(Ok(remaining - 1))
         }
 

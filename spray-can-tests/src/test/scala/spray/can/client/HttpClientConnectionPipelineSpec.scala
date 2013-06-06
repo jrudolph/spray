@@ -19,7 +19,7 @@ package spray.can.client
 import javax.net.ssl.SSLEngine
 import java.net.InetSocketAddress
 import com.typesafe.config.{ Config, ConfigFactory }
-import scala.concurrent.duration._
+import akka.util.duration._
 import org.specs2.mutable.Specification
 import org.specs2.time.NoTimeConversions
 import akka.event.LoggingAdapter

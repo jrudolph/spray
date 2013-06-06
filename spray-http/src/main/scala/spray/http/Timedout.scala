@@ -17,7 +17,7 @@
 
 package spray.http
 
-import concurrent.duration.Duration
+import akka.util.Duration
 
 case class Timedout(request: HttpRequestPart with HttpMessageStart)
 

@@ -17,7 +17,7 @@
 package spray.can.parsing
 
 import scala.annotation.tailrec
-import akka.util.{ ByteString, CompactByteString }
+import akka.util.ByteString
 import spray.http._
 import HttpHeaders._
 import StatusCodes._
@@ -37,9 +37,9 @@ class HttpResponsePartParser(_settings: ParserSettings)(_headerParser: HttpHeade
     parse = super.apply
   }
 
-  override def apply(input: CompactByteString): Result[HttpResponsePart] = fail("Unexpected server response")
+  override def apply(input: ByteString): Result[HttpResponsePart] = fail("Unexpected server response")
 
-  def parseMessage(input: CompactByteString): Result[HttpResponsePart] = {
+  def parseMessage(input: ByteString): Result[HttpResponsePart] = {
     var cursor = parseProtocol(input)
     if (byteChar(input, cursor) == ' ') {
       cursor = parseStatusCode(input, cursor + 1)
@@ -53,7 +53,7 @@ class HttpResponsePartParser(_settings: ParserSettings)(_headerParser: HttpHeade
 
   def badProtocol = throw new ParsingException("The server-side HTTP version is not supported")
 
-  def parseStatusCode(input: CompactByteString, cursor: Int): Int = {
+  def parseStatusCode(input: ByteString, cursor: Int): Int = {
     def badStatusCode = throw new ParsingException("Illegal response status code")
     def intValue(offset: Int): Int = {
       val c = byteChar(input, cursor + offset)
@@ -71,7 +71,7 @@ class HttpResponsePartParser(_settings: ParserSettings)(_headerParser: HttpHeade
     } else badStatusCode
   }
 
-  @tailrec private def parseReason(input: CompactByteString, startIx: Int)(cursor: Int = startIx): Int =
+  @tailrec private def parseReason(input: ByteString, startIx: Int)(cursor: Int = startIx): Int =
     if (cursor - startIx <= settings.maxResponseReasonLength)
       if (byteChar(input, cursor) == '\r' && byteChar(input, cursor + 1) == '\n') cursor + 2
       else parseReason(input, startIx)(cursor + 1)
@@ -79,7 +79,7 @@ class HttpResponsePartParser(_settings: ParserSettings)(_headerParser: HttpHeade
       settings.maxResponseReasonLength + " characters")
 
   // http://tools.ietf.org/html/draft-ietf-httpbis-p1-messaging-22#section-3.3
-  def parseEntity(headers: List[HttpHeader], input: CompactByteString, bodyStart: Int, clh: Option[`Content-Length`],
+  def parseEntity(headers: List[HttpHeader], input: ByteString, bodyStart: Int, clh: Option[`Content-Length`],
                   cth: Option[`Content-Type`], teh: Option[`Transfer-Encoding`],
                   closeAfterResponseCompletion: Boolean): Result[HttpResponsePart] = {
     def entityExpected: Boolean =
@@ -107,7 +107,7 @@ class HttpResponsePartParser(_settings: ParserSettings)(_headerParser: HttpHeade
               Result.Ok(message(headers, EmptyEntity), drop(input, bodyStart), closeAfterResponseCompletion)
             } else if (contentLength <= settings.maxContentLength)
               parseFixedLengthBody(headers, input, bodyStart, contentLength, cth, closeAfterResponseCompletion)
-            else fail(s"Response Content-Length $contentLength exceeds the configured limit of " +
+            else fail("Response Content-Length " + contentLength + " exceeds the configured limit of " +
               settings.maxContentLength)
 
           case None ⇒ parseToCloseBody(headers, input, bodyStart, cth)
@@ -126,11 +126,11 @@ class HttpResponsePartParser(_settings: ParserSettings)(_headerParser: HttpHeade
         if (more.isEmpty) {
           parse = this
           val part = message(headers, entity(cth, input.iterator.drop(bodyStart).toArray[Byte]))
-          Result.Ok(part, CompactByteString.empty, closeAfterResponseCompletion = true)
+          Result.Ok(part, ByteString.empty, closeAfterResponseCompletion = true)
         } else parseToCloseBody(headers, input ++ more, bodyStart, cth)
       }
       Result.NeedMoreData
-    } else fail(s"Response entity exceeds the configured limit of ${settings.maxContentLength} bytes")
+    } else fail("Response entity exceeds the configured limit of " + settings.maxContentLength + " bytes")
   }
 
   def message(headers: List[HttpHeader], entity: HttpEntity): HttpResponse =

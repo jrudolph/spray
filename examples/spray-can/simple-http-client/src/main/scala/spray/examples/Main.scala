@@ -1,6 +1,5 @@
 package spray.examples
 
-import scala.util.{Failure, Success}
 import akka.actor.ActorSystem
 import akka.event.Logging
 
@@ -31,8 +30,8 @@ object Main extends App
   } yield Set(result1, result2, result3)
 
   result onComplete {
-    case Success(res) => log.info("{} is running {}", host, res mkString ", ")
-    case Failure(error) => log.warning("Error: {}", error)
+    case Right(res) => log.info("{} is running {}", host, res mkString ", ")
+    case Left(error) => log.warning("Error: {}", error)
   }
   result onComplete { _ => system.shutdown() }
 }

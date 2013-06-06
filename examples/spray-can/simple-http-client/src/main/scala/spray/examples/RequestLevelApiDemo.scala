@@ -1,7 +1,7 @@
 package spray.examples
 
-import scala.concurrent.Future
-import scala.concurrent.duration._
+import akka.dispatch.Future
+import akka.util.duration._
 import akka.actor.ActorSystem
 import akka.io.IO
 import akka.pattern.ask
@@ -21,7 +21,7 @@ trait RequestLevelApiDemo {
   def demoRequestLevelApi(host: String)(implicit system: ActorSystem): Future[ProductVersion] = {
     import system.dispatcher // execution context for future transformation below
     for {
-      response <- IO(Http).ask(HttpRequest(GET, Uri(s"http://$host/"))).mapTo[HttpResponse]
+      response <- IO(Http).ask(HttpRequest(GET, Uri("http://"+host+"/"))).mapTo[HttpResponse]
       _ <- IO(Http) ? Http.CloseAll
     } yield {
       system.log.info("Request-Level API: received {} response with {} bytes",

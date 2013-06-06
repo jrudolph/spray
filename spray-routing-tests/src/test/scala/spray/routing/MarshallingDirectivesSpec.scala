@@ -18,7 +18,7 @@ package spray.routing
 
 import java.io.ByteArrayInputStream
 import scala.xml.{ XML, NodeSeq }
-import scala.concurrent.Promise
+import akka.dispatch.Promise
 import spray.httpx.unmarshalling._
 import spray.httpx.marshalling._
 import spray.http._

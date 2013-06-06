@@ -48,7 +48,7 @@ private[io] class TcpOutgoingConnection(_tcp: TcpExt,
                  options: immutable.Traversable[SocketOption]): Receive =
     {
       case ChannelConnectable ⇒
-        if (timeout.isDefined) context.setReceiveTimeout(Duration.Undefined) // Clear the timeout
+        if (timeout.isDefined) context.resetReceiveTimeout() // Clear the timeout
         try {
           channel.finishConnect() || (throw new ConnectException("Connection to [" + remoteAddress + "] failed"))
           log.debug("Connection established to [{}]", remoteAddress)
@@ -61,7 +61,7 @@ private[io] class TcpOutgoingConnection(_tcp: TcpExt,
         }
 
       case ReceiveTimeout ⇒
-        if (timeout.isDefined) context.setReceiveTimeout(Duration.Undefined) // Clear the timeout
+        if (timeout.isDefined) context.resetReceiveTimeout() // Clear the timeout
         val failure = new SocketTimeoutException("Connection to [" + remoteAddress + "] timed out")
         if (tcp.Settings.TraceLogging) log.debug("Could not establish connection due to {}", failure)
         closedMessage = TcpConnection.CloseInformation(Set(commander), connect.failureMessage)

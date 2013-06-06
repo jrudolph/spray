@@ -16,7 +16,7 @@
 
 package spray.can.server
 
-import scala.concurrent.duration._
+import akka.util.duration._
 import org.specs2.mutable.Specification
 import org.specs2.time.NoTimeConversions
 import akka.io.Tcp

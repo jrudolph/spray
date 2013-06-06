@@ -16,7 +16,7 @@
 
 package spray.caching
 
-import scala.concurrent.{ Promise, Future, ExecutionContext }
+import akka.dispatch.{ Promise, Future, ExecutionContext }
 import spray.util.tryOrElse
 
 /**

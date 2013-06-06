@@ -38,7 +38,7 @@ object ResponseChunkAggregation {
 
           def aggregating(response: HttpResponse, bb: ByteStringBuilder = ByteString.newBuilder): EPL = {
             case Http.MessageEvent(MessageChunk(body, _)) ⇒
-              if (bb.length + body.length <= limit) bb.putBytes(body)
+              if (bb.result().length + body.length <= limit) bb.++=(body)
               else closeWithError()
 
             case Http.MessageEvent(_: ChunkedMessageEnd) ⇒

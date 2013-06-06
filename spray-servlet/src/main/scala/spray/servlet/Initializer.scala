@@ -18,8 +18,7 @@ package spray.servlet
 
 import javax.servlet.{ ServletContext, ServletContextListener, ServletContextEvent }
 import com.typesafe.config.ConfigFactory
-import scala.language.reflectiveCalls
-import scala.util.control.NonFatal
+import akka.util.NonFatal
 import akka.util.Switch
 import akka.actor.ActorSystem
 import spray.util._

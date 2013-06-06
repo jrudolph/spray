@@ -52,7 +52,7 @@ trait RawPipelineStageTest { test ⇒
   def localHostPost = 32598
 
   def createPipelineContext(actorContext: ActorContext, remoteAddress: InetSocketAddress,
-                            localAddress: InetSocketAddress, log: LoggingAdapter): Context = ???
+                            localAddress: InetSocketAddress, log: LoggingAdapter): Context = throw new NotImplementedException
 
   class BaseFixture(stage: RawPipelineStage[Context],
                     remoteAddress: InetSocketAddress = new InetSocketAddress(remoteHostName, remoteHostPost),

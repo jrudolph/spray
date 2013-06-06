@@ -16,8 +16,8 @@
 
 package spray.httpx
 
-import scala.concurrent.duration._
-import scala.util.control.NonFatal
+import akka.util.duration._
+import akka.util.NonFatal
 import akka.util.Timeout
 import akka.actor.ActorRefFactory
 import spray.util.identityFunc
@@ -26,7 +26,7 @@ import spray.http.HttpEntity
 package object marshalling {
 
   def marshal[T](value: T)(implicit marshaller: Marshaller[T], actorRefFactory: ActorRefFactory = null,
-                           timeout: Timeout = 1 second span): Either[Throwable, HttpEntity] = {
+                           timeout: Timeout = 1.second): Either[Throwable, HttpEntity] = {
     val ctx = marshalCollecting(value)
     ctx.entity match {
       case Some(entity) ⇒ Right(entity)
@@ -36,7 +36,7 @@ package object marshalling {
   }
 
   def marshalCollecting[T](value: T)(implicit marshaller: Marshaller[T], actorRefFactory: ActorRefFactory = null,
-                                     timeout: Timeout = 1 second span): CollectingMarshallingContext = {
+                                     timeout: Timeout = 1.second): CollectingMarshallingContext = {
     val ctx = new CollectingMarshallingContext
     try {
       marshaller(value, ctx)

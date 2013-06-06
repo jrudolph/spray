@@ -28,6 +28,7 @@ import spray.can.Http
 import spray.util.Utils.temporaryServerHostnameAndPort
 import spray.httpx.RequestBuilding._
 import spray.http._
+import spray.testkit._
 
 class SprayCanServerSpec extends Specification {
   val testConf: Config = ConfigFactory.parseString("""
@@ -53,7 +54,7 @@ class SprayCanServerSpec extends Specification {
       val serverHandler = acceptConnection()
 
       val probe = sendRequest(connection, Get("/abc"))
-      serverHandler.expectMsgType[HttpRequest].uri === Uri(s"http://$hostname:$port/abc")
+      serverHandler.expectMsgType[HttpRequest].uri === Uri("http://" + hostname + ":" + port + "/abc")
 
       serverHandler.reply(HttpResponse(entity = "yeah"))
       probe.expectMsgType[HttpResponse].entity === HttpEntity("yeah")
@@ -64,7 +65,7 @@ class SprayCanServerSpec extends Specification {
       val serverHandler = acceptConnection()
 
       val probe = sendRequest(connection, ChunkedRequestStart(Get("/abc")))
-      serverHandler.expectMsgType[ChunkedRequestStart].request.uri === Uri(s"http://$hostname:$port/abc")
+      serverHandler.expectMsgType[ChunkedRequestStart].request.uri === Uri("http://" + hostname + ":" + port + "/abc")
       probe.send(connection, MessageChunk("123"))
       probe.send(connection, MessageChunk("456"))
       serverHandler.expectMsg(MessageChunk("123"))

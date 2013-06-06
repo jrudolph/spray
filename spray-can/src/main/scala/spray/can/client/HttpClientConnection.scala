@@ -17,9 +17,9 @@
 package spray.can
 package client
 
-import scala.concurrent.duration.Duration
+import akka.util.Duration
 import akka.actor.{ SupervisorStrategy, ReceiveTimeout, ActorRef }
-import akka.io.{ Tcp, IO }
+import akka.io.{ ExtraStrategies, Tcp, IO }
 import spray.http.{ SetRequestTimeout, Confirmed, HttpRequestPart }
 import spray.io._
 
@@ -37,17 +37,17 @@ private[can] class HttpClientConnection(connectCommander: ActorRef,
   context.setReceiveTimeout(settings.connectingTimeout)
 
   // we cannot sensibly recover from crashes
-  override def supervisorStrategy = SupervisorStrategy.stoppingStrategy
+  override def supervisorStrategy = ExtraStrategies.stoppingStrategy
 
   def receive: Receive = {
     case connected: Tcp.Connected ⇒
-      context.setReceiveTimeout(Duration.Undefined)
+      context.resetReceiveTimeout()
       log.debug("Connected to {}", connected.remoteAddress)
       val tcpConnection = sender
       tcpConnection ! Tcp.Register(self)
       context.watch(tcpConnection)
       connectCommander ! connected
-      context.become(running(tcpConnection, pipelineStage, pipelineContext(connected)))
+      context.become(running(tcpConnection, pipelineStage, pipelineContext(connected), keepOpenOnPeerClosed = false))
 
     case Tcp.CommandFailed(_: Tcp.Connect) ⇒
       connectCommander ! Http.CommandFailed(connect)
@@ -80,12 +80,12 @@ private[can] object HttpClientConnection {
   def pipelineStage(settings: ClientConnectionSettings) = {
     import settings._
     ClientFrontend(requestTimeout) >>
-      ResponseChunkAggregation(responseChunkAggregationLimit) ? (responseChunkAggregationLimit > 0) >>
+      (responseChunkAggregationLimit > 0) ? ResponseChunkAggregation(responseChunkAggregationLimit) >>
       ResponseParsing(parserSettings) >>
       RequestRendering(settings) >>
-      ConnectionTimeouts(idleTimeout) ? (reapingCycle.isFinite && idleTimeout.isFinite) >>
-      SslTlsSupport ? sslEncryption >>
-      TickGenerator(reapingCycle) ? (idleTimeout.isFinite || requestTimeout.isFinite)
+      (reapingCycle.isFinite && idleTimeout.isFinite) ? ConnectionTimeouts(idleTimeout) >>
+      sslEncryption ? SslTlsSupport >>
+      (idleTimeout.isFinite || requestTimeout.isFinite) ? TickGenerator(reapingCycle)
   }
 
 }

@@ -19,12 +19,13 @@ package spray.io
 import akka.util.duration._
 import akka.io.Tcp
 import akka.util.{ FiniteDuration, Duration }
+import spray.util._
 
 //# source-quote
 object TickGenerator {
 
   def apply(period: Duration): PipelineStage = {
-    require(period > Duration.Zero, "period must be > 0")
+    requirePositiveOrUndefined(period)
 
     new OptionalPipelineStage[PipelineContext] {
 

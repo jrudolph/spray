@@ -16,8 +16,7 @@
 
 package spray.routing
 
-import scala.util.{ Failure, Success }
-import scala.concurrent.{ ExecutionContext, Future }
+import akka.dispatch.{ ExecutionContext, Future }
 import shapeless._
 import spray.httpx.unmarshalling.MalformedContent
 
@@ -124,7 +123,8 @@ object Directive {
 
   implicit def pimpApply[L <: HList](directive: Directive[L])(implicit hac: ApplyConverter[L]): hac.In ⇒ Route = f ⇒ directive.happly(hac(f))
 
-  implicit class SingleValueModifiers[T](underlying: Directive1[T]) {
+  implicit def singleValueMod[T](underlying: Directive1[T]): SingleValueModifiers[T] = new SingleValueModifiers(underlying)
+  class SingleValueModifiers[T](underlying: Directive1[T]) {
     def map[R](f: T ⇒ R)(implicit hl: HListable[R]): Directive[hl.Out] =
       underlying.hmap { case value :: HNil ⇒ f(value) }
 

@@ -16,8 +16,8 @@
 
 package spray.can.server
 
-import scala.concurrent.duration.Duration
-import akka.io.{ IO, Tcp }
+import akka.util.Duration
+import akka.io.{ ExtraStrategies, IO, Tcp }
 import akka.actor._
 import spray.util.SprayActorLogging
 import spray.can.server.StatsSupport.StatsHolder
@@ -43,7 +43,7 @@ private[can] class HttpListener(bindCommander: ActorRef,
   context.setReceiveTimeout(settings.bindTimeout)
 
   // we cannot sensibly recover from crashes
-  override def supervisorStrategy = SupervisorStrategy.stoppingStrategy
+  override def supervisorStrategy = ExtraStrategies.stoppingStrategy
 
   def receive = binding()
 
@@ -57,7 +57,7 @@ private[can] class HttpListener(bindCommander: ActorRef,
     case x: Tcp.Bound ⇒
       log.info("Bound to {}", endpoint)
       bindCommander ! x
-      context.setReceiveTimeout(Duration.Undefined)
+      context.resetReceiveTimeout()
       context.become(connected(sender))
 
     case Tcp.CommandFailed(_: Tcp.Bind) ⇒

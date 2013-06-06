@@ -22,6 +22,7 @@ import spray.util.SprayActorLogging
 import spray.io.ClientSSLEngineProvider
 import spray.http.{ HttpHeaders, HttpRequest }
 import spray.can.{ Http, HostConnectorSetup }
+import akka.io.ExtraStrategies
 
 private[can] class HttpHostConnector(normalizedSetup: HostConnectorSetup, clientConnectionSettingsGroup: ActorRef)(implicit sslEngineProvider: ClientSSLEngineProvider)
     extends Actor with SprayActorLogging {
@@ -46,7 +47,7 @@ private[can] class HttpHostConnector(normalizedSetup: HostConnectorSetup, client
   context.setReceiveTimeout(settings.idleTimeout)
 
   // we cannot sensibly recover from crashes
-  override def supervisorStrategy = SupervisorStrategy.stoppingStrategy
+  override def supervisorStrategy = ExtraStrategies.stoppingStrategy
 
   def receive: Receive = {
     case request: HttpRequest ⇒

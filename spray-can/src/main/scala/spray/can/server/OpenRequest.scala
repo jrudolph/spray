@@ -17,7 +17,7 @@
 package spray.can.server
 
 import scala.collection.immutable.Queue
-import scala.concurrent.duration.Duration
+import akka.util.Duration
 import akka.actor.ActorRef
 import akka.spray.RefUtils
 import spray.can.rendering.ResponsePartRenderingContext
@@ -192,7 +192,7 @@ trait OpenRequestComponent { component ⇒
     private def format(part: HttpMessagePart) = part match {
       case x: HttpRequestPart with HttpMessageStart ⇒
         val request = x.message.asInstanceOf[HttpRequest]
-        s"${request.method} request to ${request.uri}"
+        request.method + " request to " + request.uri
       case MessageChunk(body, _) ⇒ body.length.toString + " byte request chunk"
       case x                     ⇒ x.toString
     }

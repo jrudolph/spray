@@ -16,8 +16,8 @@
 
 package spray.can.server
 
-import scala.util.control.NonFatal
-import scala.concurrent.duration.Duration
+import akka.util.NonFatal
+import akka.util.Duration
 import akka.actor.ActorRef
 import akka.io.Tcp
 import spray.can.server.RequestParsing.HttpMessageStartEvent
@@ -108,7 +108,7 @@ object ServerFrontend {
                   ResponsePartRenderingContext(response, request.method, request.protocol,
                     closeAfterResponseCompletion, Tcp.NoAck(PartAndSender(response, context.self)))
                 }
-                else throw new NotImplementedError("fastPath is not yet supported with pipelining enabled")
+                else throw new UnsupportedOperationException("fastPath is not yet supported with pipelining enabled")
 
               } else openNewRequest(request, closeAfterResponseCompletion, System.currentTimeMillis)
 

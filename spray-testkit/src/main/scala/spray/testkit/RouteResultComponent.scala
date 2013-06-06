@@ -16,13 +16,14 @@
 
 package spray.testkit
 
-import java.util.concurrent.CountDownLatch
-import concurrent.duration._
+import java.util.concurrent.{ TimeUnit, CountDownLatch }
 import scala.collection.mutable.ListBuffer
 import akka.actor.{ Status, ActorRefFactory, ActorRef }
 import akka.spray.UnregisteredActorRef
 import spray.routing.{ RejectionHandler, Rejected, Rejection }
 import spray.http._
+import akka.util.duration._
+import akka.util.FiniteDuration
 
 trait RouteResultComponent {
 
@@ -69,7 +70,7 @@ trait RouteResultComponent {
     }
 
     private[testkit] def awaitResult: this.type = {
-      latch.await(timeout.toMillis, MILLISECONDS)
+      latch.await(timeout.toMillis, TimeUnit.MILLISECONDS)
       this
     }
 
@@ -115,6 +116,6 @@ trait RouteResultComponent {
   case class RouteTestTimeout(duration: FiniteDuration)
 
   object RouteTestTimeout {
-    implicit val default = RouteTestTimeout(1 second span)
+    implicit val default = RouteTestTimeout(1.second)
   }
 }

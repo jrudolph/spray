@@ -18,9 +18,8 @@ package spray.caching
 
 import com.googlecode.concurrentlinkedhashmap.ConcurrentLinkedHashMap
 import scala.annotation.tailrec
-import scala.concurrent.duration.Duration
-import scala.concurrent.{ Promise, ExecutionContext, Future }
-import scala.util.{ Failure, Success }
+import akka.util.Duration
+import akka.dispatch.{ Promise, ExecutionContext, Future }
 
 object LruCache {
   /**
@@ -64,7 +63,7 @@ final class SimpleLruCache[V](val maxCapacity: Int, val initialCapacity: Int) ex
         fut.onComplete { value ⇒
           promise.complete(value)
           // in case of exceptions we remove the cache entry (i.e. try again later)
-          if (value.isFailure) store.remove(key, promise)
+          if (value.isLeft) store.remove(key, promise)
         }
         fut
       case existingFuture ⇒ existingFuture
@@ -131,7 +130,7 @@ final class ExpiringLruCache[V](maxCapacity: Long, initialCapacity: Int,
       valueFuture.onComplete { value ⇒
         newEntry.promise.tryComplete(value)
         // in case of exceptions we remove the cache entry (i.e. try again later)
-        if (value.isFailure) store.remove(key, newEntry)
+        if (value.isLeft) store.remove(key, newEntry)
       }
       newEntry.promise.future
     }
@@ -168,8 +167,8 @@ private[caching] class Entry[T](val promise: Promise[T]) {
     lastAccessed = System.currentTimeMillis
   }
   override def toString = future.value match {
-    case Some(Success(value))     ⇒ value.toString
-    case Some(Failure(exception)) ⇒ exception.toString
-    case None                     ⇒ "pending"
+    case Some(Right(value))    ⇒ value.toString
+    case Some(Left(exception)) ⇒ exception.toString
+    case None                  ⇒ "pending"
   }
 }

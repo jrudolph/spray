@@ -16,7 +16,7 @@
 
 package spray.routing
 
-import scala.util.control.NonFatal
+import akka.util.NonFatal
 import akka.actor._
 import akka.io.Tcp
 import spray.util.LoggingContext

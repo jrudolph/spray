@@ -16,8 +16,8 @@
 
 package spray.client
 
-import scala.concurrent.{ ExecutionContext, Future }
-import scala.concurrent.duration._
+import akka.dispatch.{ ExecutionContext, Future }
+import akka.util.duration._
 import akka.actor.{ ActorRefFactory, ActorRef }
 import akka.util.Timeout
 import akka.pattern.ask

@@ -18,8 +18,8 @@ package spray.client
 
 import com.typesafe.config.ConfigFactory
 import scala.util.Random
-import scala.concurrent.Future
-import scala.concurrent.duration._
+import akka.dispatch.Future
+import akka.util.duration._
 import org.specs2.mutable.Specification
 import org.specs2.time.NoTimeConversions
 import akka.pattern.ask

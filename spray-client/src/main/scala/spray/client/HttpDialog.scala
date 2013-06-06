@@ -16,10 +16,10 @@
 
 package spray.client
 
-import scala.concurrent.duration._
-import scala.concurrent.{ ExecutionContext, Promise, Future }
+import akka.util.duration._
+import akka.dispatch.{ ExecutionContext, Promise, Future }
 import akka.pattern.ask
-import akka.util.Timeout
+import akka.util.{ FiniteDuration, Timeout }
 import akka.io.IO
 import akka.actor._
 import spray.can.client.ClientConnectionSettings

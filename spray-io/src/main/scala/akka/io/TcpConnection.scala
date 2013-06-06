@@ -53,7 +53,7 @@ private[io] abstract class TcpConnection(val tcp: TcpExt, val channel: SocketCha
 
       val info = ConnectionInfo(registration, handler, keepOpenOnPeerClosed, useResumeWriting)
       doRead(info, None) // immediately try reading
-      context.setReceiveTimeout(Duration.Undefined)
+      context.resetReceiveTimeout()
       context.become(connected(info))
 
     case cmd: CloseCommand ⇒

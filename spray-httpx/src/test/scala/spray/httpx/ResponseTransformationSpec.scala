@@ -17,7 +17,7 @@
 package spray.httpx
 
 import org.specs2.mutable.Specification
-import scala.concurrent.{ Promise, Future }
+import akka.dispatch.{ Promise, Future }
 import akka.actor.ActorSystem
 import encoding.Gzip
 import spray.http._

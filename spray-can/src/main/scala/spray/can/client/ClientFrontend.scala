@@ -17,7 +17,7 @@
 package spray.can.client
 
 import scala.collection.immutable.Queue
-import scala.concurrent.duration._
+import akka.util.duration._
 import akka.actor.ActorRef
 import akka.io.Tcp
 import spray.can.rendering.RequestPartRenderingContext
@@ -25,6 +25,7 @@ import spray.can.Http
 import spray.http._
 import spray.io._
 import System.{ currentTimeMillis ⇒ now }
+import akka.util.Duration
 
 object ClientFrontend {
 

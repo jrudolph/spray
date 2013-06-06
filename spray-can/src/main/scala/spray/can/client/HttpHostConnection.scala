@@ -18,10 +18,10 @@ package spray.can.client
 
 import java.net.InetSocketAddress
 import scala.collection.immutable
-import scala.collection.immutable.Queue
-import scala.concurrent.duration.Duration
+import scala.collection.immutable.{ Stack, Queue }
+import akka.util.Duration
 import akka.actor._
-import akka.io.Inet
+import akka.io.{ ExtraStrategies, Inet }
 import spray.util.SprayActorLogging
 import spray.can.client.HttpHostConnector._
 import spray.can.Http
@@ -35,7 +35,7 @@ private[client] class HttpHostConnection(remoteAddress: InetSocketAddress,
     extends Actor with SprayActorLogging {
 
   // we cannot sensibly recover from crashes
-  override def supervisorStrategy = SupervisorStrategy.stoppingStrategy
+  override def supervisorStrategy = ExtraStrategies.stoppingStrategy
 
   def receive: Receive = unconnected
 
@@ -46,7 +46,7 @@ private[client] class HttpHostConnection(remoteAddress: InetSocketAddress,
       case ctx: RequestContext ⇒
         log.debug("Attempting new connection to {}", remoteAddress)
         clientConnectionSettingsGroup ! Http.Connect(remoteAddress, None, options, None, sslEngineProvider)
-        context.setReceiveTimeout(Duration.Undefined)
+        context.resetReceiveTimeout()
         context.become(connecting(Queue(ctx)))
 
       case _: Http.CloseCommand ⇒ context.stop(self)
@@ -131,7 +131,7 @@ private[client] class HttpHostConnection(remoteAddress: InetSocketAddress,
 
     case cmd: Http.CloseCommand ⇒
       httpConnection ! cmd
-      openRequests foreach clear(s"Connection actively closed ($cmd)", retry = false)
+      openRequests foreach clear("Connection actively closed (" + cmd + ")", retry = false)
       context.become(terminating(httpConnection))
 
     case ev: Http.ConnectionClosed ⇒
@@ -179,7 +179,7 @@ private[client] class HttpHostConnection(remoteAddress: InetSocketAddress,
   def format(part: HttpMessagePart) = part match {
     case x: HttpRequestPart with HttpMessageStart ⇒
       val request = x.message.asInstanceOf[HttpRequest]
-      s"${request.method} request to ${request.uri}"
+      request.method + " request to " + request.uri
     case MessageChunk(body, _) ⇒ body.length.toString + " byte request chunk"
     case x                     ⇒ x.toString
   }
@@ -189,5 +189,18 @@ private[client] class HttpHostConnection(remoteAddress: InetSocketAddress,
     case ChunkedResponseStart(HttpResponse(status, _, _, _)) ⇒ status.value.toString + " response start"
     case MessageChunk(body, _) ⇒ body.length.toString + " byte response chunk"
     case x ⇒ x.toString
+  }
+
+  override def preRestart(reason: Throwable, message: Option[Any]) {
+    reason.printStackTrace()
+    super.preRestart(reason, message)
+  }
+
+  override def unhandled(message: Any) = {
+    val field = this.getClass.getDeclaredField("akka$actor$Actor$$behaviorStack")
+    field.setAccessible(true)
+    val stack = field.get(this).asInstanceOf[Stack[Receive]]
+    println("Got " + message + " in " + stack.map(_.getClass))
+    super.unhandled(message)
   }
 }

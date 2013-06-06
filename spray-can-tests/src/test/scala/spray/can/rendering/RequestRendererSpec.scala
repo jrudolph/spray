@@ -19,7 +19,7 @@ package rendering
 
 import java.net.InetSocketAddress
 import org.specs2.mutable.Specification
-import akka.event.NoLogging
+import akka.spray.NoLogging
 import spray.util.EOL
 import spray.http._
 import HttpHeaders._

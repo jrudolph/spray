@@ -19,7 +19,7 @@ package spray.can.rendering
 import org.specs2.matcher.DataTables
 import org.specs2.specification.Scope
 import org.specs2._
-import akka.event.NoLogging
+import akka.spray.NoLogging
 import spray.util._
 import spray.http._
 import HttpHeaders._

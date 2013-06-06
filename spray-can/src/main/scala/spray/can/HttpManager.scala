@@ -16,7 +16,7 @@
 
 package spray.can
 
-import scala.util.control.NonFatal
+import akka.util.NonFatal
 import akka.actor._
 import spray.can.client.{ HttpHostConnector, HttpClientSettingsGroup, ClientConnectionSettings }
 import spray.can.server.HttpListener
@@ -77,7 +77,7 @@ private[can] class HttpManager(httpSettings: HttpExt#Settings) extends Actor wit
         hostConnectors = hostConnectors filter { _._2 != child }
       else
         settingsGroups = settingsGroups filter { _._2 != child }
-      behavior.applyOrElse(ev, (_: Terminated) ⇒ ())
+      behavior.lift(ev).getOrElse((_: Terminated) ⇒ ())
 
     case HttpHostConnector.DemandIdleShutdown ⇒
       hostConnectors = hostConnectors filter { _._2 != sender }

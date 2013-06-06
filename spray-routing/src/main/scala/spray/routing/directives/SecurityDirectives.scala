@@ -17,7 +17,7 @@
 package spray.routing
 package directives
 
-import scala.concurrent.{ ExecutionContext, Future }
+import akka.dispatch.{ ExecutionContext, Future }
 import shapeless.HNil
 import spray.routing.authentication._
 import BasicDirectives._

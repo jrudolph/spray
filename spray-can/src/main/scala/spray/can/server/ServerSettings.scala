@@ -17,7 +17,7 @@
 package spray.can.server
 
 import com.typesafe.config.{ ConfigFactory, Config }
-import scala.concurrent.duration.Duration
+import akka.util.Duration
 import akka.actor.ActorSystem
 import spray.can.parsing.ParserSettings
 import spray.util._

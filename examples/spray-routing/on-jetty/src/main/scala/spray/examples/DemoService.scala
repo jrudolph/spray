@@ -2,7 +2,7 @@ package spray.examples
 
 import java.io.File
 import org.parboiled.common.FileUtils
-import scala.concurrent.duration._
+import akka.util.duration._
 import akka.actor.{Props, Actor}
 import akka.io.Tcp
 import spray.routing.{HttpService, RequestContext}
@@ -12,6 +12,8 @@ import spray.util._
 import spray.http._
 import MediaTypes._
 import CachingDirectives._
+import akka.util.FiniteDuration
+import akka.dispatch.ExecutionContext
 
 
 // we don't implement our route structure directly in the service actor because
@@ -33,7 +35,7 @@ class DemoServiceActor extends Actor with DemoService {
 trait DemoService extends HttpService {
 
   // we use the enclosing ActorContext's or ActorSystem's dispatcher for our Futures and Scheduler
-  implicit def executionContext = actorRefFactory.dispatcher
+  //implicit def executionContext = actorRefFactory.asInstanceOf[{ def dispatcher: ExecutionContext }].dispatcher
 
   val demoRoute = {
     get {
@@ -66,7 +68,7 @@ trait DemoService extends HttpService {
       } ~
       path("cached") {
         cache(simpleRouteCache) { ctx =>
-          in(1500 millis span) {
+          in(1500.millis) {
             ctx.complete("This resource is only slow the first time!\n" +
               "It was produced on " + DateTime.now.toIsoDateTimeString + "\n\n" +
               "(Note that your browser will likely enforce a cache invalidation with a\n" +
@@ -128,7 +130,7 @@ trait DemoService extends HttpService {
               context.stop(self)
 
             case Ok(remaining) =>
-              in(Duration(250, MILLISECONDS)) {
+              in(250.millis) {
                 val nextChunk = MessageChunk("<li>" + DateTime.now.toIsoDateTimeString + "</li>")
                 ctx.responder ! nextChunk.withAck(Ok(remaining - 1))
               }

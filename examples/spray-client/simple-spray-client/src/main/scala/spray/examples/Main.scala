@@ -1,7 +1,6 @@
 package spray.examples
 
-import scala.util.{Success, Failure}
-import scala.concurrent.duration._
+import akka.util.duration._
 import akka.actor.{Props, ActorSystem}
 import akka.pattern.ask
 import akka.util.Timeout
@@ -41,11 +40,11 @@ object Main extends App {
     Get("http://maps.googleapis.com/maps/api/elevation/json?locations=27.988056,86.925278&sensor=false")
   }
   responseFuture onComplete {
-    case Success(GoogleApiResult(_, Elevation(_, elevation) :: _)) =>
+    case Right(GoogleApiResult(_, Elevation(_, elevation) :: _)) =>
       log.info("The elevation of Mt. Everest is: {} m", elevation)
       shutdown()
 
-    case Failure(error) =>
+    case Left(error) =>
       log.error(error, "Couldn't get elevation")
       shutdown()
   }

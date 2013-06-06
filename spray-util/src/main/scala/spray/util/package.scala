@@ -43,9 +43,8 @@ package object util {
     try body catch { case NonFatal(e) ⇒ onError(e) }
 
   def requirePositiveOrUndefined(duration: Duration): Duration =
-    if (duration <= Duration.Zero)
-      throw new IllegalArgumentException("requirement failed: duration must be > 0 or 'infinite'")
-    else duration
+    if (duration == Duration.Undefined || duration > Duration.Zero) duration
+    else throw new IllegalArgumentException("requirement failed: duration must be > 0 or 'infinite'")
 
   def actorSystem(implicit refFactory: ActorRefFactory): ExtendedActorSystem =
     refFactory match {

@@ -16,18 +16,17 @@
 
 package spray.routing
 
-import scala.concurrent.Future
-import akka.event.NoLogging
+import akka.dispatch.{ Promise, Future }
 import spray.routing.authentication._
 import spray.http._
 import HttpHeaders._
 
 class SecurityDirectivesSpec extends RoutingSpec {
 
-  val dontAuth = UserPassAuthenticator[BasicUserContext](_ ⇒ Future.successful(None))
+  val dontAuth = UserPassAuthenticator[BasicUserContext](_ ⇒ Promise.successful(None))
 
   val doAuth = UserPassAuthenticator[BasicUserContext] { userPassOption ⇒
-    Future.successful(Some(BasicUserContext(userPassOption.get.user)))
+    Promise.successful(Some(BasicUserContext(userPassOption.get.user)))
   }
 
   "the 'authenticate(BasicAuth())' directive" should {

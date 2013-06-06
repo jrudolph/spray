@@ -17,7 +17,7 @@
 package spray.routing
 package directives
 
-import scala.concurrent.{ ExecutionContext, Future }
+import akka.dispatch.{ ExecutionContext, Future }
 import spray.httpx.marshalling.Marshaller
 import spray.http._
 import StatusCodes._

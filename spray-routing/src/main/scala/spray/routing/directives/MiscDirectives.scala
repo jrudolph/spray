@@ -17,7 +17,6 @@
 package spray.routing
 package directives
 
-import scala.reflect.{ classTag, ClassTag }
 import shapeless._
 import spray.http._
 import spray.util._
@@ -80,8 +79,8 @@ trait MiscDirectives {
   def cancelRejection(rejection: Rejection): Directive0 =
     cancelAllRejections(_ == rejection)
 
-  def ofType[T <: Rejection: ClassTag]: Rejection ⇒ Boolean = {
-    val erasure = classTag[T].runtimeClass
+  def ofType[T <: Rejection: ClassManifest]: Rejection ⇒ Boolean = {
+    val erasure = classManifest[T].erasure
     erasure.isInstance(_)
   }
 

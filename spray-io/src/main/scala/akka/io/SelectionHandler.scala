@@ -200,14 +200,6 @@ private[io] object SelectionHandler {
       }
     }
   }
-
-  final val stoppingStrategy: SupervisorStrategy = {
-    import SupervisorStrategy._
-    def stoppingDecider: Decider = {
-      case _: Exception ⇒ Stop
-    }
-    OneForOneStrategy()(stoppingDecider)
-  }
 }
 
 private[io] class SelectionHandler(settings: SelectionHandlerSettings) extends Actor with ActorLogging {
@@ -231,7 +223,7 @@ private[io] class SelectionHandler(settings: SelectionHandlerSettings) extends A
   override def postStop(): Unit = registry.shutdown()
 
   // we can never recover from failures of a connection or listener child
-  override def supervisorStrategy = stoppingStrategy
+  override def supervisorStrategy = ExtraStrategies.stoppingStrategy
 
   def spawnChildWithCapacityProtection(cmd: WorkerForCommand, retriesLeft: Int): Unit = {
     if (TraceLogging) log.debug("Executing [{}]", cmd)

@@ -16,7 +16,7 @@
 
 package spray.httpx
 
-import scala.concurrent.{ ExecutionContext, Future }
+import akka.dispatch.{ ExecutionContext, Future }
 import akka.event.LoggingAdapter
 import spray.httpx.unmarshalling._
 import spray.httpx.encoding.Decoder
@@ -77,5 +77,5 @@ object TransformerAux {
 }
 
 class PipelineException(message: String, cause: Throwable = null) extends RuntimeException(message, cause)
-class UnsuccessfulResponseException(val response: HttpResponse) extends RuntimeException(s"Status: ${response.status}\n" +
-  s"Body: ${if (response.entity.buffer.length < 1024) response.entity.asString else response.entity.buffer.length + " bytes"}")
+class UnsuccessfulResponseException(val response: HttpResponse) extends RuntimeException("Status: " + response.status + "\n" +
+  "Body: " + { if (response.entity.buffer.length < 1024) response.entity.asString else response.entity.buffer.length + " bytes" })

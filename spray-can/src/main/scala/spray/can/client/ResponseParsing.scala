@@ -19,7 +19,7 @@ package spray.can.client
 import scala.annotation.tailrec
 import scala.collection.immutable.Queue
 import akka.io.Tcp
-import akka.util.CompactByteString
+import akka.util.ByteString
 import spray.can.rendering.RequestPartRenderingContext
 import spray.can.Http
 import spray.can.parsing._
@@ -40,7 +40,7 @@ object ResponseParsing {
           }
           var openRequestMethods = Queue.empty[HttpMethod]
 
-          @tailrec def parse(data: CompactByteString): Unit =
+          @tailrec def parse(data: ByteString): Unit =
             parser.parse(data) match {
               case Result.Ok(part, remainingData, _) ⇒
                 eventPL(Http.MessageEvent(part))
@@ -77,10 +77,10 @@ object ResponseParsing {
           }
 
           val eventPipeline: EPL = {
-            case Tcp.Received(data: CompactByteString) ⇒ parse(data)
+            case Tcp.Received(data: ByteString) ⇒ parse(data)
 
             case ev @ Http.PeerClosed ⇒
-              parse(CompactByteString.empty)
+              parse(ByteString.empty)
               eventPL(ev)
 
             case ev ⇒ eventPL(ev)

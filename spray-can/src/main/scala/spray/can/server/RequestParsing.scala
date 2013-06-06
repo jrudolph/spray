@@ -17,9 +17,9 @@
 package spray.can.server
 
 import scala.annotation.tailrec
-import scala.util.control.NonFatal
+import akka.util.NonFatal
 import akka.io.Tcp
-import akka.util.{ CompactByteString, ByteString }
+import akka.util.ByteString
 import spray.can.rendering.ResponsePartRenderingContext
 import spray.can.Http
 import spray.can.parsing._
@@ -43,7 +43,7 @@ object RequestParsing {
               log.warning(errorInfo.withSummaryPrepended("Illegal request header").formatPretty)
           }
 
-          @tailrec def parse(data: CompactByteString): Unit =
+          @tailrec def parse(data: ByteString): Unit =
             if (!data.isEmpty) parser.parse(data) match {
               case Result.Ok(part, remainingData, closeAfterResponseCompletion) ⇒
                 eventPL {
@@ -78,7 +78,7 @@ object RequestParsing {
           val commandPipeline = commandPL
 
           val eventPipeline: EPL = {
-            case Tcp.Received(data: CompactByteString) ⇒
+            case Tcp.Received(data: ByteString) ⇒
               try parse(data)
               catch {
                 case NonFatal(e) ⇒ handleError(StatusCodes.BadRequest, ErrorInfo(e.getMessage.nullAsEmpty))

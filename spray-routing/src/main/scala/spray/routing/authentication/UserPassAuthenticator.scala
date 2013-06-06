@@ -17,7 +17,7 @@
 package spray.routing.authentication
 
 import com.typesafe.config.{ ConfigException, Config }
-import scala.concurrent.{ ExecutionContext, Promise }
+import akka.dispatch.{ ExecutionContext, Promise }
 import spray.caching.{ LruCache, Cache }
 import spray.util.pimpString_
 
@@ -35,7 +35,7 @@ object UserPassAuthenticator {
    *   }
    * }}}
    */
-  def fromConfig[T](config: Config)(createUser: UserPass ⇒ T): UserPassAuthenticator[T] = { userPassOption ⇒
+  def fromConfig[T](config: Config)(createUser: UserPass ⇒ T)(implicit ec: ExecutionContext): UserPassAuthenticator[T] = { userPassOption ⇒
     Promise.successful(
       userPassOption.flatMap { userPass ⇒
         try {

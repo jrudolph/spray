@@ -22,8 +22,8 @@ import java.util.concurrent.TimeUnit._
 import javax.servlet.{ AsyncEvent, AsyncListener }
 import javax.servlet.http.{ HttpServlet, HttpServletResponse, HttpServletRequest }
 import java.util.concurrent.atomic.AtomicInteger
-import scala.util.control.NonFatal
-import scala.concurrent.duration.Duration
+import akka.util.NonFatal
+import akka.util.Duration
 import akka.actor.{ UnhandledMessage, ActorRef, ActorSystem }
 import akka.spray.{ RefUtils, UnregisteredActorRef }
 import akka.event.{ LoggingAdapter, Logging }

@@ -26,6 +26,7 @@ import spray.util.Utils._
 import spray.httpx.RequestBuilding._
 import spray.http._
 import HttpHeaders._
+import spray.testkit._
 
 class SprayCanClientSpec extends Specification {
 
@@ -105,13 +106,13 @@ class SprayCanClientSpec extends Specification {
 
     "properly complete a simple request/response cycle with a Host-header request" in new TestSetup {
       val (probe, hostConnector) = sendViaHostConnector(Get("/hij") ~> Host(hostname, port) ~> Date(DateTime.now))
-      verifyServerSideRequestAndReply(s"http://$hostname:$port/hij", probe)
+      verifyServerSideRequestAndReply("http://" + hostname + ":" + port + "/hij", probe)
       closeHostConnector(hostConnector)
     }
 
     "add a host header to the request if it doesn't contain one" in new TestSetup {
       val (probe, hostConnector) = sendViaHostConnector(Get("/lmn"))
-      verifyServerSideRequestAndReply(s"http://$hostname:$port/lmn", probe)
+      verifyServerSideRequestAndReply("http://" + hostname + ":" + port + "/lmn", probe)
       closeHostConnector(hostConnector)
     }
 
@@ -147,13 +148,13 @@ class SprayCanClientSpec extends Specification {
     "properly complete a simple request/response cycle with a request containing a host header" in new TestSetup {
       val probe = TestProbe()
       probe.send(IO(Http), Get("/abc") ~> Host(hostname, port))
-      verifyServerSideRequestAndReply(s"http://$hostname:$port/abc", probe)
+      verifyServerSideRequestAndReply("http://" + hostname + ":" + port + "/abc", probe)
     }
 
     "transform absolute request URIs into relative URIs plus host header" in new TestSetup {
       val probe = TestProbe()
-      probe.send(IO(Http), Get(s"http://$hostname:$port/abc?query#fragment"))
-      verifyServerSideRequestAndReply(s"http://$hostname:$port/abc?query", probe)
+      probe.send(IO(Http), Get("http://" + hostname + ":" + port + "/abc?query#fragment"))
+      verifyServerSideRequestAndReply("http://" + hostname + ":" + port + "/abc?query", probe)
     }
 
     "produce an error if the request does not contain a Host-header or an absolute URI" in {
@@ -164,7 +165,7 @@ class SprayCanClientSpec extends Specification {
 
     "produce an error if the request was not completed within the configured timeout" in new TestSetup {
       val probe = TestProbe()
-      probe.send(IO(Http), Get("/abc") ~> Host(hostname, port))
+      probe.send(IO(Http), Get("/abcdef-timeout") ~> Host(hostname, port))
       acceptConnection()
       probe.expectMsgType[Status.Failure].cause.getMessage must startWith("Request timeout")
     }

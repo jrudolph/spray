@@ -18,9 +18,8 @@ package spray.routing
 package directives
 
 import shapeless._
-import scala.concurrent.{ ExecutionContext, Future }
-import scala.util.control.NonFatal
-import scala.util.{ Failure, Success, Try }
+import akka.dispatch.{ ExecutionContext, Future }
+import akka.util.NonFatal
 import spray.httpx.marshalling.Marshaller
 
 trait FutureDirectives {
@@ -29,7 +28,7 @@ trait FutureDirectives {
    * "Unwraps" a ``Future[T]`` and runs it's inner route after future
    * completion with the future's value as an extraction of type ``Try[T]``.
    */
-  def onComplete[T](magnet: OnCompleteFutureMagnet[T]): Directive1[Try[T]] = magnet
+  def onComplete[T](magnet: OnCompleteFutureMagnet[T]): Directive1[Either[Throwable, T]] = magnet
 
   /**
    * "Unwraps" a ``Future[T]`` and runs it's inner route after future
@@ -53,12 +52,12 @@ trait FutureDirectives {
 
 object FutureDirectives extends FutureDirectives
 
-trait OnCompleteFutureMagnet[T] extends Directive1[Try[T]]
+trait OnCompleteFutureMagnet[T] extends Directive1[Either[Throwable, T]]
 
 object OnCompleteFutureMagnet {
   implicit def apply[T](future: Future[T])(implicit ec: ExecutionContext) =
     new OnCompleteFutureMagnet[T] {
-      def happly(f: (Try[T] :: HNil) ⇒ Route) = ctx ⇒
+      def happly(f: (Either[Throwable, T] :: HNil) ⇒ Route) = ctx ⇒
         try future.onComplete(t ⇒ f(t :: HNil)(ctx))
         catch { case NonFatal(error) ⇒ ctx.failWith(error) }
     }
@@ -75,10 +74,10 @@ object OnSuccessFutureMagnet {
       type Out = hl.Out
       def get = this
       def happly(f: Out ⇒ Route) = ctx ⇒ future.onComplete {
-        case Success(t) ⇒
+        case Right(t) ⇒
           try f(hl(t))(ctx)
           catch { case NonFatal(error) ⇒ ctx.failWith(error) }
-        case Failure(error) ⇒ ctx.failWith(error)
+        case Left(error) ⇒ ctx.failWith(error)
       }
     }
 }
@@ -89,8 +88,8 @@ object OnFailureFutureMagnet {
   implicit def apply[T](future: Future[T])(implicit m: Marshaller[T], ec: ExecutionContext) =
     new OnFailureFutureMagnet {
       def happly(f: (Throwable :: HNil) ⇒ Route) = ctx ⇒ future.onComplete {
-        case Success(t) ⇒ ctx.complete(t)
-        case Failure(error) ⇒
+        case Right(t) ⇒ ctx.complete(t)
+        case Left(error) ⇒
           try f(error :: HNil)(ctx)
           catch { case NonFatal(err) ⇒ ctx.failWith(err) }
       }

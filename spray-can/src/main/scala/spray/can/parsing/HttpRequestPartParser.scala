@@ -17,7 +17,7 @@
 package spray.can.parsing
 
 import scala.annotation.tailrec
-import akka.util.CompactByteString
+import akka.util.ByteString
 import spray.http._
 import HttpMethods._
 import StatusCodes._
@@ -33,7 +33,7 @@ class HttpRequestPartParser(_settings: ParserSettings)(_headerParser: HttpHeader
   def copyWith(warnOnIllegalHeader: ErrorInfo ⇒ Unit): HttpRequestPartParser =
     new HttpRequestPartParser(settings)(headerParser.copyWith(warnOnIllegalHeader))
 
-  def parseMessage(input: CompactByteString): Result[HttpRequestPart] = {
+  def parseMessage(input: ByteString): Result[HttpRequestPart] = {
     var cursor = parseMethod(input)
     cursor = parseRequestTarget(input, cursor)
     cursor = parseProtocol(input, cursor)
@@ -42,7 +42,7 @@ class HttpRequestPartParser(_settings: ParserSettings)(_headerParser: HttpHeader
     else badProtocol
   }
 
-  def parseMethod(input: CompactByteString): Int = {
+  def parseMethod(input: ByteString): Int = {
     def badMethod = throw new ParsingException(NotImplemented, ErrorInfo("Unsupported HTTP method"))
     @tailrec def parseMethod(meth: HttpMethod, ix: Int = 1): Int =
       if (ix == meth.value.length)
@@ -69,7 +69,7 @@ class HttpRequestPartParser(_settings: ParserSettings)(_headerParser: HttpHeader
     }
   }
 
-  def parseRequestTarget(input: CompactByteString, cursor: Int): Int = {
+  def parseRequestTarget(input: ByteString, cursor: Int): Int = {
     val uriStart = cursor
     val uriEndLimit = cursor + settings.maxUriLength
 
@@ -78,7 +78,7 @@ class HttpRequestPartParser(_settings: ParserSettings)(_headerParser: HttpHeader
       else if (input(ix) == ' ') ix
       else if (ix < uriEndLimit) findUriEnd(ix + 1)
       else throw new ParsingException(RequestUriTooLong,
-        s"URI length exceeds the configured limit of ${settings.maxUriLength} characters")
+        "URI length exceeds the configured limit of " + settings.maxUriLength + " characters")
 
     val uriEnd = findUriEnd()
     try {
@@ -94,7 +94,7 @@ class HttpRequestPartParser(_settings: ParserSettings)(_headerParser: HttpHeader
   def badProtocol = throw new ParsingException(HTTPVersionNotSupported)
 
   // http://tools.ietf.org/html/draft-ietf-httpbis-p1-messaging-22#section-3.3
-  def parseEntity(headers: List[HttpHeader], input: CompactByteString, bodyStart: Int, clh: Option[`Content-Length`],
+  def parseEntity(headers: List[HttpHeader], input: ByteString, bodyStart: Int, clh: Option[`Content-Length`],
                   cth: Option[`Content-Type`], teh: Option[`Transfer-Encoding`],
                   closeAfterResponseCompletion: Boolean): Result[HttpRequestPart] =
     teh match {
@@ -104,7 +104,7 @@ class HttpRequestPartParser(_settings: ParserSettings)(_headerParser: HttpHeader
           Result.Ok(ChunkedRequestStart(message(headers, EmptyEntity)), drop(input, bodyStart), closeAfterResponseCompletion)
         } else fail("A chunked request must not contain a Content-Length header.")
 
-      case Some(te) ⇒ fail(NotImplemented, s"$te is not supported by this server")
+      case Some(te) ⇒ fail(NotImplemented, te + " is not supported by this server")
 
       case None ⇒
         val contentLength = clh match {
@@ -116,7 +116,7 @@ class HttpRequestPartParser(_settings: ParserSettings)(_headerParser: HttpHeader
           Result.Ok(message(headers, EmptyEntity), drop(input, bodyStart), closeAfterResponseCompletion)
         } else if (contentLength <= settings.maxContentLength)
           parseFixedLengthBody(headers, input, bodyStart, contentLength, cth, closeAfterResponseCompletion)
-        else fail(RequestEntityTooLarge, s"Request Content-Length $contentLength exceeds the configured limit of " +
+        else fail(RequestEntityTooLarge, "Request Content-Length " + contentLength + " exceeds the configured limit of " +
           settings.maxContentLength)
     }
 

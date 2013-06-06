@@ -1,7 +1,7 @@
 package spray.examples
 
-import scala.concurrent.Future
-import scala.concurrent.duration._
+import akka.dispatch.Future
+import akka.util.duration._
 import akka.io.IO
 import akka.util.Timeout
 import akka.pattern.ask

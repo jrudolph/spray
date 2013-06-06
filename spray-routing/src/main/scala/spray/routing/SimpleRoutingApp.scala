@@ -16,8 +16,8 @@
 
 package spray.routing
 
-import scala.concurrent.Future
-import scala.concurrent.duration._
+import akka.dispatch.Future
+import akka.util.duration._
 import scala.collection.immutable
 import akka.actor.{ ActorSystem, ActorRefFactory, Actor, Props }
 import akka.pattern.ask

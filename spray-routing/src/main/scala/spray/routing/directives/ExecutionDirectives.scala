@@ -17,7 +17,7 @@
 package spray.routing
 package directives
 
-import scala.util.control.NonFatal
+import akka.util.NonFatal
 import akka.actor._
 
 trait ExecutionDirectives {
@@ -50,7 +50,7 @@ trait ExecutionDirectives {
         if (handler isDefinedAt filteredRejections)
           handler(filteredRejections) {
             ctx.withContentNegotiationDisabled withRejectionHandling { r ⇒
-              sys.error(s"The RejectionHandler for $rejections must not itself produce rejections (received $r)!")
+              sys.error("The RejectionHandler for " + rejections + " must not itself produce rejections (received " + r + ")!")
             }
           }
         else ctx.reject(filteredRejections: _*)

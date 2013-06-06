@@ -16,7 +16,7 @@
 
 package spray.httpx.unmarshalling
 
-import scala.util.control.NonFatal
+import akka.util.NonFatal
 import spray.http._
 import spray.util._
 

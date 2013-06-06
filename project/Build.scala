@@ -65,6 +65,7 @@ object Build extends Build {
     .settings(sprayModuleSettings: _*)
     .settings(libraryDependencies ++=
       compile(parboiled) ++
+      provided(akkaActor) ++
       test(specs2)
     )
 
@@ -100,6 +101,7 @@ object Build extends Build {
       sprayHttp, sprayHttpx, sprayUtil,
       sprayIO) // for access to akka.io.Tcp, can go away after upgrade to Akka 2.2
     .settings(sprayModuleSettings: _*)
+    .settings(spray.boilerplate.BoilerplatePlugin.Boilerplate.settings: _*)
     .settings(libraryDependencies ++=
       compile(shapeless) ++
       provided(akkaActor)
@@ -209,7 +211,7 @@ object Build extends Build {
     .settings(jettyExampleSettings: _*)
     .settings(libraryDependencies ++=
       compile(akkaActor) ++
-      test(specs2) ++
+      test(specs2, akkaTestKit) ++
       runtime(akkaSlf4j, logback) ++
       container(jettyWebApp, servlet30)
     )
@@ -219,7 +221,7 @@ object Build extends Build {
     .settings(exampleSettings: _*)
     .settings(libraryDependencies ++=
       compile(akkaActor) ++
-      test(specs2) ++
+      test(specs2, akkaTestKit) ++
       runtime(akkaSlf4j, logback)
     )
 

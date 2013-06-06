@@ -17,7 +17,7 @@
 package spray.can.parsing
 
 import scala.annotation.tailrec
-import akka.util.{ ByteString, CompactByteString }
+import akka.util.ByteString
 import spray.http._
 import StatusCodes._
 import HttpHeaders._
@@ -26,10 +26,10 @@ import CharUtils._
 
 private[parsing] abstract class HttpMessagePartParser[Part <: HttpMessagePart](val settings: ParserSettings,
                                                                                val headerParser: HttpHeaderParser) extends Parser[Part] {
-  var parse: CompactByteString ⇒ Result[Part] = this
+  var parse: ByteString ⇒ Result[Part] = this
   var protocol: HttpProtocol = `HTTP/1.1`
 
-  def apply(input: CompactByteString): Result[Part] =
+  def apply(input: ByteString): Result[Part] =
     try parseMessage(input)
     catch {
       case NotEnoughDataException ⇒
@@ -39,9 +39,9 @@ private[parsing] abstract class HttpMessagePartParser[Part <: HttpMessagePart](v
       case e: ParsingException ⇒ fail(e.status, e.info)
     }
 
-  def parseMessage(input: CompactByteString): Result[Part]
+  def parseMessage(input: ByteString): Result[Part]
 
-  def parseProtocol(input: CompactByteString, cursor: Int = 0): Int = {
+  def parseProtocol(input: ByteString, cursor: Int = 0): Int = {
     def c(ix: Int) = byteChar(input, cursor + ix)
     if (c(0) == 'H' && c(1) == 'T' && c(2) == 'T' && c(3) == 'P' && c(4) == '/' && c(5) == '1' && c(6) == '.') {
       protocol = c(7) match {
@@ -55,7 +55,7 @@ private[parsing] abstract class HttpMessagePartParser[Part <: HttpMessagePart](v
 
   def badProtocol: Nothing
 
-  @tailrec final def parseHeaderLines(input: CompactByteString, lineStart: Int, headers: List[HttpHeader] = Nil,
+  @tailrec final def parseHeaderLines(input: ByteString, lineStart: Int, headers: List[HttpHeader] = Nil,
                                       headerCount: Int = 0, ch: Option[Connection] = None,
                                       clh: Option[`Content-Length`] = None, cth: Option[`Content-Type`] = None,
                                       teh: Option[`Transfer-Encoding`] = None, e100: Boolean = false): Result[Part] = {
@@ -96,21 +96,21 @@ private[parsing] abstract class HttpMessagePartParser[Part <: HttpMessagePart](v
 
       case h: Expect ⇒
         if (h.has100continue) parseHeaderLines(input, lineEnd, h :: headers, headerCount + 1, ch, clh, cth, teh, e100 = true)
-        else fail(ExpectationFailed, s"Expectation '$h' is not supported by this server")
+        else fail(ExpectationFailed, "Expectation '" + h + "' is not supported by this server")
 
       case h if headerCount < settings.maxHeaderCount ⇒
         parseHeaderLines(input, lineEnd, h :: headers, headerCount + 1, ch, clh, cth, teh, e100)
 
-      case _ ⇒ fail(s"HTTP message contains more than the configured limit of ${settings.maxHeaderCount} headers")
+      case _ ⇒ fail("HTTP message contains more than the configured limit of " + settings.maxHeaderCount + " headers")
     }
   }
 
-  def parseHeaderLinesAux(input: CompactByteString, lineStart: Int, headers: List[HttpHeader], headerCount: Int,
+  def parseHeaderLinesAux(input: ByteString, lineStart: Int, headers: List[HttpHeader], headerCount: Int,
                           ch: Option[Connection], clh: Option[`Content-Length`], cth: Option[`Content-Type`],
                           teh: Option[`Transfer-Encoding`], e100: Boolean): Result[Part] =
     parseHeaderLines(input, lineStart, headers, headerCount, ch, clh, cth, teh, e100)
 
-  def parseEntity(headers: List[HttpHeader], input: CompactByteString, bodyStart: Int, clh: Option[`Content-Length`],
+  def parseEntity(headers: List[HttpHeader], input: ByteString, bodyStart: Int, clh: Option[`Content-Length`],
                   cth: Option[`Content-Type`], teh: Option[`Transfer-Encoding`],
                   closeAfterResponseCompletion: Boolean): Result[Part]
 
@@ -125,7 +125,7 @@ private[parsing] abstract class HttpMessagePartParser[Part <: HttpMessagePart](v
       Result.NeedMoreData
     }
 
-  def parseChunk(closeAfterResponseCompletion: Boolean)(input: CompactByteString): Result[Part] = {
+  def parseChunk(closeAfterResponseCompletion: Boolean)(input: ByteString): Result[Part] = {
     @tailrec def parseTrailer(extension: String, lineStart: Int, headers: List[HttpHeader] = Nil,
                               headerCount: Int = 0): Result[Part] = {
       val lineEnd = headerParser.parseHeaderLine(input, lineStart)()
@@ -136,7 +136,7 @@ private[parsing] abstract class HttpMessagePartParser[Part <: HttpMessagePart](v
             drop(input, lineEnd), closeAfterResponseCompletion)
         case header if headerCount < settings.maxHeaderCount ⇒
           parseTrailer(extension, lineEnd, header :: headers, headerCount + 1)
-        case _ ⇒ fail(s"Chunk trailer contains more than the configured limit of ${settings.maxHeaderCount} headers")
+        case _ ⇒ fail("Chunk trailer contains more than the configured limit of " + settings.maxHeaderCount + " headers")
       }
     }
 
@@ -163,7 +163,7 @@ private[parsing] abstract class HttpMessagePartParser[Part <: HttpMessagePart](v
           case '\n' ⇒ parseChunkBody(chunkSize, extension, cursor + 1)
           case _ ⇒ parseChunkExtensions(chunkSize, cursor + 1)(startIx)
         }
-      } else fail(s"HTTP chunk extension length exceeds configured limit of ${settings.maxChunkExtLength} characters")
+      } else fail("HTTP chunk extension length exceeds configured limit of " + settings.maxChunkExtLength + " characters")
 
     @tailrec def parseSize(cursor: Int = 0, size: Long = 0): Result[Part] =
       if (size <= settings.maxChunkSize) {
@@ -171,9 +171,9 @@ private[parsing] abstract class HttpMessagePartParser[Part <: HttpMessagePart](v
           case c if isHexDigit(c) ⇒ parseSize(cursor + 1, size * 16 + hexValue(c))
           case ';' if cursor > 0 ⇒ parseChunkExtensions(size.toInt, cursor + 1)()
           case '\r' if cursor > 0 && byteChar(input, cursor + 1) == '\n' ⇒ parseChunkBody(size.toInt, "", cursor + 2)
-          case c ⇒ fail(s"Illegal character '${escape(c)}' in chunk start")
+          case c ⇒ fail("Illegal character '" + escape(c) + "' in chunk start")
         }
-      } else fail(s"HTTP chunk size exceeds the configured limit of ${settings.maxChunkSize} bytes")
+      } else fail("HTTP chunk size exceeds the configured limit of " + settings.maxChunkSize + " bytes")
 
     try parseSize()
     catch {
@@ -201,8 +201,8 @@ private[parsing] abstract class HttpMessagePartParser[Part <: HttpMessagePart](v
 
   def message(headers: List[HttpHeader], entity: HttpEntity): Part
 
-  def drop(input: ByteString, n: Int): CompactByteString =
-    if (input.length == n) CompactByteString.empty else input.drop(n).compact
+  def drop(input: ByteString, n: Int): ByteString =
+    if (input.length == n) ByteString.empty else input.drop(n).compact
 
   def fail(summary: String): Result[Nothing] = fail(summary, "")
   def fail(summary: String, detail: String): Result[Nothing] = fail(StatusCodes.BadRequest, summary, detail)

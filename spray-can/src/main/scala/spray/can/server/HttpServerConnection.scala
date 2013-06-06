@@ -17,9 +17,9 @@
 package spray.can.server
 
 import java.net.InetSocketAddress
-import scala.concurrent.duration.Duration
+import akka.util.Duration
 import akka.actor.{ SupervisorStrategy, Terminated, ReceiveTimeout, ActorRef }
-import akka.io.Tcp
+import akka.io.{ ExtraStrategies, Tcp }
 import spray.can.server.StatsSupport.StatsHolder
 import spray.io._
 import spray.can.Http
@@ -38,7 +38,7 @@ private[can] class HttpServerConnection(tcpConnection: ActorRef,
   context.setReceiveTimeout(settings.registrationTimeout)
 
   // we cannot sensibly recover from crashes
-  override def supervisorStrategy = SupervisorStrategy.stoppingStrategy
+  override def supervisorStrategy = ExtraStrategies.stoppingStrategy
 
   def receive: Receive = {
     case Tcp.Register(handler, keepOpenOnPeerClosed, _)         ⇒ register(handler, keepOpenOnPeerClosed)
@@ -57,11 +57,11 @@ private[can] class HttpServerConnection(tcpConnection: ActorRef,
   }
 
   def register(handler: ActorRef, keepOpenOnPeerClosed: Boolean, fastPath: Http.FastPath = Http.EmptyFastPath): Unit = {
-    context.setReceiveTimeout(Duration.Undefined)
+    context.resetReceiveTimeout()
     tcpConnection ! Tcp.Register(self, keepOpenOnPeerClosed)
     context.watch(tcpConnection)
     context.watch(handler)
-    context.become(running(tcpConnection, pipelineStage, pipelineContext(handler, fastPath)))
+    context.become(running(tcpConnection, pipelineStage, pipelineContext(handler, fastPath), keepOpenOnPeerClosed = false))
   }
 
   def pipelineContext(_handler: ActorRef, _fastPath: Http.FastPath) = new SslTlsContext with ServerFrontend.Context {
@@ -193,14 +193,14 @@ private[can] object HttpServerConnection {
   def pipelineStage(settings: ServerSettings, statsHolder: Option[StatsHolder]) = {
     import settings._
     ServerFrontend(settings) >>
-      RequestChunkAggregation(requestChunkAggregationLimit) ? (requestChunkAggregationLimit > 0) >>
-      PipeliningLimiter(pipeliningLimit) ? (pipeliningLimit > 0) >>
-      StatsSupport(statsHolder.get) ? statsSupport >>
-      RemoteAddressHeaderSupport ? remoteAddressHeader >>
+      (requestChunkAggregationLimit > 0) ? RequestChunkAggregation(requestChunkAggregationLimit) >>
+      (pipeliningLimit > 0) ? PipeliningLimiter(pipeliningLimit) >>
+      statsSupport ? StatsSupport(statsHolder.get) >>
+      remoteAddressHeader ? RemoteAddressHeaderSupport >>
       RequestParsing(settings) >>
       ResponseRendering(settings) >>
-      ConnectionTimeouts(idleTimeout) ? (reapingCycle.isFinite && idleTimeout.isFinite) >>
-      SslTlsSupport ? sslEncryption >>
-      TickGenerator(reapingCycle) ? (reapingCycle.isFinite && (idleTimeout.isFinite || requestTimeout.isFinite))
+      (reapingCycle.isFinite && idleTimeout.isFinite) ? ConnectionTimeouts(idleTimeout) >>
+      sslEncryption ? SslTlsSupport >>
+      (reapingCycle.isFinite && (idleTimeout.isFinite || requestTimeout.isFinite)) ? TickGenerator(reapingCycle)
   }
 }

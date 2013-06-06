@@ -2,7 +2,7 @@ package spray.examples
 
 import java.net.InetSocketAddress
 import scala.collection.immutable.Queue
-import scala.concurrent.duration._
+import akka.util.duration._
 import akka.pattern.ask
 import akka.io.{Tcp, IO}
 import akka.util.{ByteString, Timeout}

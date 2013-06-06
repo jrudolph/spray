@@ -19,7 +19,7 @@ package spray.can.parsing
 import com.typesafe.config.{ ConfigFactory, Config }
 import org.specs2.mutable.Specification
 import akka.actor.ActorSystem
-import akka.util.CompactByteString
+import akka.util.ByteString
 import spray.util._
 import spray.http._
 import HttpHeaders._
@@ -148,7 +148,7 @@ class ResponseParserSpec extends Specification {
     parse(newParser(requestMethod))(rawResponse)
 
   def parse(parser: HttpResponsePartParser)(rawResponse: String): AnyRef = {
-    val data = CompactByteString(rawResponse.stripMargin.replace(EOL, "\n").replace("\n", "\r\n"))
+    val data = ByteString(rawResponse.stripMargin.replace(EOL, "\n").replace("\n", "\r\n"))
     parser.parse(data) match {
       case Result.Ok(HttpResponse(s, e, h, p), rd, close) ⇒ (s, e.asString, h, p, rd.utf8String, close)
       case Result.Ok(ChunkedResponseStart(HttpResponse(s, EmptyEntity, h, p)), rd, close) ⇒ (s, h, p, rd.utf8String, close)

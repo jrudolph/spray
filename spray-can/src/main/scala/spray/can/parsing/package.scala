@@ -16,20 +16,20 @@
 
 package spray.can.parsing
 
-import akka.util.CompactByteString
+import akka.util.ByteString
 import spray.util.SingletonException
 import spray.http._
 
-trait Parser[Part <: HttpMessagePart] extends (CompactByteString ⇒ Result[Part]) {
-  def parse: CompactByteString ⇒ Result[Part]
+trait Parser[Part <: HttpMessagePart] extends (ByteString ⇒ Result[Part]) {
+  def parse: ByteString ⇒ Result[Part]
 }
 
 sealed trait Result[+T <: HttpMessagePart]
 object Result {
   case object NeedMoreData extends Result[Nothing]
-  case class Ok[T <: HttpMessagePart](part: T, remainingData: CompactByteString,
+  case class Ok[T <: HttpMessagePart](part: T, remainingData: ByteString,
                                       closeAfterResponseCompletion: Boolean) extends Result[T]
-  case class Expect100Continue(remainingData: CompactByteString) extends Result[Nothing]
+  case class Expect100Continue(remainingData: ByteString) extends Result[Nothing]
   case class ParsingError(status: StatusCode, info: ErrorInfo) extends Result[Nothing]
 }
 

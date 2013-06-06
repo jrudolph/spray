@@ -18,7 +18,7 @@ package spray.routing
 package authentication
 
 import com.typesafe.config.Config
-import scala.concurrent.{ ExecutionContext, Future }
+import akka.dispatch.{ ExecutionContext, Future }
 import spray.http._
 import spray.util._
 import HttpHeaders._

@@ -22,7 +22,7 @@ import javax.naming.{ Context, NamingException, NamingEnumeration }
 import javax.naming.ldap.InitialLdapContext
 import javax.naming.directory.{ SearchControls, SearchResult, Attribute }
 import scala.collection.JavaConverters._
-import scala.concurrent.{ Promise, Future, ExecutionContext }
+import akka.dispatch.{ Promise, Future, ExecutionContext }
 import akka.actor.ActorSystem
 import spray.util.LoggingContext
 

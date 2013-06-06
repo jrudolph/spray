@@ -57,7 +57,7 @@ object ParserSettings {
     def bytes(key: String): Int = {
       val value: Long = config getBytes key
       if (value <= Int.MaxValue) value.toInt
-      else sys.error(s"ParserSettings config setting $key must not be larger than ${Int.MaxValue}")
+      else sys.error("ParserSettings config setting " + key + " must not be larger than " + Int.MaxValue)
     }
     val cacheConfig = config.getConfig("header-cache")
     ParserSettings(

@@ -17,10 +17,9 @@
 package spray.routing
 package directives
 
-import akka.actor.ActorRefFactory
-import scala.concurrent.duration.Duration
-import scala.concurrent.ExecutionContext
-import scala.util.{ Success, Failure }
+import akka.actor.{ ActorRefProvider, ActorRefFactory }
+import akka.util.Duration
+import akka.dispatch.ExecutionContext
 import spray.caching._
 import spray.http._
 import CacheDirectives._
@@ -70,13 +69,13 @@ trait CachingDirectives {
                   case response: HttpResponse ⇒ promise.success(Right(response))
                   case Rejected(rejections)   ⇒ promise.success(Left(rejections))
                   case x ⇒ promise.failure(new RequestProcessingException(StatusCodes.InternalServerError,
-                    s"Route responses other than HttpResponse or Rejections cannot be cached (received: $x)"))
+                    "Route responses other than HttpResponse or Rejections cannot be cached (received: " + x + ")"))
                 }
               }
             } onComplete {
-              case Success(Right(response))  ⇒ ctx.complete(response)
-              case Success(Left(rejections)) ⇒ ctx.reject(rejections: _*)
-              case Failure(error)            ⇒ ctx.failWith(error)
+              case Right(Right(response))  ⇒ ctx.complete(response)
+              case Right(Left(rejections)) ⇒ ctx.reject(rejections: _*)
+              case Left(error)             ⇒ ctx.failWith(error)
             }
 
           case None ⇒ route(ctx)
@@ -102,7 +101,7 @@ object CacheSpecMagnet {
     new CacheSpecMagnet {
       def responseCache = cache
       def liftedKeyer = keyer.lift
-      implicit def executionContext = factory.dispatcher
+      implicit def executionContext = factory.asInstanceOf[{ def dispatcher: ExecutionContext }].dispatcher
     }
 }
 

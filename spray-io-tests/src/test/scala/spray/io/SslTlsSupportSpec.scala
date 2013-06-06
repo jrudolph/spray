@@ -20,7 +20,7 @@ import javax.net.ssl._
 import java.net.{ InetSocketAddress, SocketException }
 import java.security.{ KeyStore, SecureRandom }
 import java.util.concurrent.atomic.AtomicInteger
-import scala.concurrent.duration._
+import akka.util.duration._
 import com.typesafe.config.{ ConfigFactory, Config }
 import org.specs2.mutable.Specification
 import org.specs2.time.NoTimeConversions
@@ -111,7 +111,7 @@ class SslTlsSupportSpec extends Specification with NoTimeConversions {
     val handler = system.actorOf(
       props = Props {
         new ConnectionHandler {
-          def receive = running(connection, frontend >> SslTlsSupport, sslTlsContext[ClientSSLEngineProvider](connected))
+          def receive = running(connection, frontend >> SslTlsSupport, sslTlsContext[ClientSSLEngineProvider](connected), keepOpenOnPeerClosed = false)
         }
       },
       name = "client" + counter.incrementAndGet())
@@ -172,7 +172,7 @@ class SslTlsSupportSpec extends Specification with NoTimeConversions {
 
                   consume(rest.drop(1) /* \n */ )
                 } else {
-                  if (next.nonEmpty) context.log.debug(s"Buffering prefix of next message '$next'")
+                  if (next.nonEmpty) context.log.debug("Buffering prefix of next message '" + next + "'")
                   next
                 }
               }
@@ -188,7 +188,7 @@ class SslTlsSupportSpec extends Specification with NoTimeConversions {
         val handler = system.actorOf(
           props = Props {
             new ConnectionHandler {
-              def receive = running(connection, frontend >> SslTlsSupport, sslTlsContext[ServerSSLEngineProvider](x))
+              def receive = running(connection, frontend >> SslTlsSupport, sslTlsContext[ServerSSLEngineProvider](x), keepOpenOnPeerClosed = false)
             }
           },
           name = "server" + counter.incrementAndGet())

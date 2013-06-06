@@ -1,6 +1,6 @@
 package spray.examples
 
-import scala.concurrent.duration._
+import akka.util.duration._
 import akka.actor.ActorSystem
 import spray.routing.SimpleRoutingApp
 import spray.http.MediaTypes._
@@ -27,7 +27,7 @@ object Main extends App with SimpleRoutingApp {
     (post | parameter('method ! "post")) {
       path("stop") {
         complete {
-          system.scheduler.scheduleOnce(1.second)(system.shutdown())(system.dispatcher)
+          system.scheduler.scheduleOnce(1.second)(system.shutdown())
           "Shutting down in 1 second..."
         }
       }

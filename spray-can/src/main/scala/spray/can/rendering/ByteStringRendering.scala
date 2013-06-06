@@ -24,12 +24,12 @@ private[can] class ByteStringRendering(sizeHint: Int) extends Rendering {
   b.sizeHint(sizeHint)
 
   def ~~(char: Char): this.type = {
-    b.putByte(char.toByte)
+    b.+=(char.toByte)
     this
   }
 
   def ~~(bytes: Array[Byte]): this.type = {
-    b.putBytes(bytes)
+    b.++=(bytes)
     this
   }
 

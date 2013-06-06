@@ -52,7 +52,7 @@ object RejectionHandler {
       complete(BadRequest, "The form field '" + name + "' was malformed:\n" + msg)
 
     case MalformedHeaderRejection(headerName, msg, _) :: _ ⇒
-      complete(BadRequest, s"The value of HTTP header '$headerName' was malformed:\n" + msg)
+      complete(BadRequest, "The value of HTTP header '" + headerName + "' was malformed:\n" + msg)
 
     case MalformedQueryParamRejection(name, msg, _) :: _ ⇒
       complete(BadRequest, "The query parameter '" + name + "' was malformed:\n" + msg)

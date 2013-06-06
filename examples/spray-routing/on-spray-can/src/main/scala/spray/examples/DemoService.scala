@@ -2,19 +2,21 @@ package spray.examples
 
 import java.io.File
 import org.parboiled.common.FileUtils
-import scala.concurrent.duration._
+import akka.util.duration._
 import akka.actor.{Props, Actor}
 import akka.pattern.ask
 import spray.routing.{HttpService, RequestContext}
-import spray.routing.directives.CachingDirectives
+import spray.routing.directives.{CompletionMagnet, CachingDirectives}
 import spray.can.server.Stats
 import spray.can.Http
-import spray.httpx.marshalling.Marshaller
+import spray.httpx.marshalling.{MetaMarshallers, Marshaller}
 import spray.httpx.encoding.Gzip
 import spray.util._
 import spray.http._
 import MediaTypes._
 import CachingDirectives._
+import akka.util.FiniteDuration
+import akka.dispatch.ExecutionContext
 
 
 // we don't implement our route structure directly in the service actor because
@@ -36,7 +38,7 @@ class DemoServiceActor extends Actor with DemoService {
 trait DemoService extends HttpService {
 
   // we use the enclosing ActorContext's or ActorSystem's dispatcher for our Futures and Scheduler
-  implicit def executionContext = actorRefFactory.dispatcher
+  implicit def executionContext = actorRefFactory.asInstanceOf[{ def dispatcher: ExecutionContext }].dispatcher
 
   val demoRoute = {
     get {
@@ -65,11 +67,11 @@ trait DemoService extends HttpService {
         }
       } ~
       path("stats") {
-        complete {
+        complete(CompletionMagnet.fromObject {
           actorRefFactory.actorFor("/user/IO-HTTP/listener-0")
             .ask(Http.GetStats)(1.second)
             .mapTo[Stats]
-        }
+        }(MetaMarshallers.futureMarshaller[Stats]))
       } ~
       path("timeout") { ctx =>
         // we simply let the request drop to provoke a timeout

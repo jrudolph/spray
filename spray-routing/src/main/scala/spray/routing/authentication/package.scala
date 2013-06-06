@@ -16,7 +16,7 @@
 
 package spray.routing
 
-import scala.concurrent.Future
+import akka.dispatch.Future
 
 package object authentication {
   type ContextAuthenticator[T] = RequestContext ⇒ Future[Authentication[T]]

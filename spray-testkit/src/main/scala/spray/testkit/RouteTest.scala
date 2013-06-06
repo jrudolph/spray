@@ -18,7 +18,6 @@ package spray.testkit
 
 import com.typesafe.config.{ ConfigFactory, Config }
 import scala.util.DynamicVariable
-import scala.reflect.ClassTag
 import akka.actor.ActorSystem
 import org.scalatest.Suite
 import spray.routing.directives.ExecutionDirectives
@@ -27,7 +26,7 @@ import spray.httpx.unmarshalling._
 import spray.httpx._
 import spray.http._
 import spray.util._
-import scala.util.control.NonFatal
+import akka.util.NonFatal
 
 trait RouteTest extends RequestBuilding with RouteResultComponent {
   this: TestFrameworkInterface ⇒
@@ -55,15 +54,15 @@ trait RouteTest extends RequestBuilding with RouteResultComponent {
   def handled: Boolean = result.handled
   def response: HttpResponse = result.response
   def entity: HttpEntity = response.entity
-  def entityAs[T: Unmarshaller: ClassTag]: T = entity.as[T].fold(error ⇒ failTest("Could not unmarshal response " +
-    s"to type '${implicitly[ClassTag[T]]}' for `entityAs` assertion: $error\n\nResponse was: $response"), identityFunc)
+  def entityAs[T: Unmarshaller: ClassManifest]: T = entity.as[T].fold(error ⇒ failTest("Could not unmarshal response " +
+    "to type '" + classManifest[T] + "' for `entityAs` assertion: " + error + "\n\nResponse was: " + response), identityFunc)
   def body: HttpBody = entity.toOption getOrElse failTest("Response has no body")
   def contentType: ContentType = body.contentType
   def mediaType: MediaType = contentType.mediaType
   def charset: HttpCharset = contentType.charset
   def definedCharset: Option[HttpCharset] = contentType.definedCharset
   def headers: List[HttpHeader] = response.headers
-  def header[T <: HttpHeader: ClassTag]: Option[T] = response.header[T]
+  def header[T <: HttpHeader: ClassManifest]: Option[T] = response.header[T]
   def header(name: String): Option[HttpHeader] = response.headers.mapFind(h ⇒ if (h.name == name) Some(h) else None)
   def status: StatusCode = response.status
   def chunks: List[MessageChunk] = result.chunks

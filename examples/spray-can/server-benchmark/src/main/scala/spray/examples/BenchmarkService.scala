@@ -1,6 +1,6 @@
 package spray.examples
 
-import scala.concurrent.duration._
+import akka.util.duration._
 import akka.actor.Actor
 import spray.can.Http
 import spray.json._

@@ -18,13 +18,13 @@ package spray.io
 
 import org.specs2.mutable.Specification
 import scala.util.Random
-import scala.concurrent.Future
+import akka.dispatch.Future
 import akka.actor.ActorSystem
 import spray.util._
 
 class SslBufferPoolSpec extends Specification {
   val system = ActorSystem("SslBufferPoolSpec")
-  import system.dispatcher
+  implicit val dispatcher = system.dispatcher
 
   "The SslBufferPool" should {
     "provide a proper, thread-safe buffer pool" in {

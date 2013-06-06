@@ -84,13 +84,15 @@ object LoggingMagnet {
     }
 }
 
-case class LogEntry(obj: Any, level: LogLevel = DebugLevel) {
+class LogEntry(obj: Any, level: LogLevel = DebugLevel) {
   def logTo(log: LoggingAdapter) {
     log.log(level, obj.toString)
   }
 }
 
 object LogEntry {
+  def apply(obj: Any, level: LogLevel): LogEntry =
+    new LogEntry(obj, level)
   def apply(obj: Any, marker: String, level: LogLevel): LogEntry =
-    LogEntry(if (marker.isEmpty) obj else marker + ": " + obj, level)
+    new LogEntry(if (marker.isEmpty) obj else marker + ": " + obj, level)
 }

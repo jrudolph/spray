@@ -17,12 +17,13 @@ package spray.can.server
 
 import java.util.concurrent.atomic.AtomicLong
 import scala.annotation.tailrec
-import scala.concurrent.duration._
+import akka.util.duration._
 import spray.http.{ Timedout, HttpMessageStart }
 import spray.can.rendering.ResponsePartRenderingContext
 import spray.can.server.RequestParsing.HttpMessageStartEvent
 import spray.io._
 import spray.can.Http
+import akka.util.FiniteDuration
 
 object StatsSupport {
 
@@ -57,7 +58,7 @@ object StatsSupport {
     }
 
     def toStats = Stats(
-      uptime = (System.currentTimeMillis - startTimestamp) millis span,
+      uptime = (System.currentTimeMillis - startTimestamp) millis,
       totalRequests = requestStarts.get,
       openRequests = requestStarts.get - responseStarts.get,
       maxOpenRequests = maxOpenRequests.get,

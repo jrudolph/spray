@@ -16,7 +16,7 @@
 
 package spray.routing
 
-import scala.concurrent.Future
+import akka.dispatch.{ Promise, Future }
 import spray.http.StatusCodes
 import spray.util.SingletonException
 
@@ -26,25 +26,25 @@ class FutureDirectivesSpec extends RoutingSpec {
 
   "The `onComplete` directive" should {
     "properly unwrap a Future in the success case" in {
-      Get() ~> onComplete(Future.successful("yes")) { echoComplete } ~> check {
-        entityAs[String] === "Success(yes)"
+      Get() ~> onComplete(Promise.successful("yes")) { echoComplete } ~> check {
+        entityAs[String] === "Right(yes)"
       }
     }
     "properly unwrap a Future in the failure case" in {
-      Get() ~> onComplete(Future.failed(new RuntimeException("no"))) { echoComplete } ~> check {
-        entityAs[String] === "Failure(java.lang.RuntimeException: no)"
+      Get() ~> onComplete(Promise.failed[String](new RuntimeException("no"))) { echoComplete } ~> check {
+        entityAs[String] === "Left(java.lang.RuntimeException: no)"
       }
     }
   }
 
   "The `onSuccess` directive" should {
     "properly unwrap a Future in the success case" in {
-      Get() ~> onSuccess(Future.successful("yes")) { echoComplete } ~> check {
+      Get() ~> onSuccess(Promise.successful("yes")) { echoComplete } ~> check {
         entityAs[String] === "yes"
       }
     }
     "throw an exception in the failure case" in {
-      Get() ~> onSuccess(Future.failed(TestException)) { echoComplete } ~> check {
+      Get() ~> onSuccess(Promise.failed[String](TestException)) { echoComplete } ~> check {
         status === StatusCodes.InternalServerError
       }
     }
@@ -52,12 +52,12 @@ class FutureDirectivesSpec extends RoutingSpec {
 
   "The `onFailure` directive" should {
     "properly unwrap a Future in the success case" in {
-      Get() ~> onFailure(Future.successful("yes")) { echoComplete } ~> check {
+      Get() ~> onFailure(Promise.successful("yes")) { echoComplete } ~> check {
         entityAs[String] === "yes"
       }
     }
     "throw an exception in the failure case" in {
-      Get() ~> onFailure(Future.failed[String](TestException)) { echoComplete } ~> check {
+      Get() ~> onFailure(Promise.failed[String](TestException)) { echoComplete } ~> check {
         entityAs[String] === "spray.routing.FutureDirectivesSpec$TestException$"
       }
     }
