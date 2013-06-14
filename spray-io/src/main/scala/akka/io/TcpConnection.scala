@@ -266,6 +266,7 @@ private[io] abstract class TcpConnection(val tcp: TcpExt, val channel: SocketCha
 
   def handleError(handler: ActorRef, exception: IOException): Nothing = {
     closedMessage = CloseInformation(Set(handler), ErrorClosed(extractMsg(exception)))
+    if (!tcp.Settings.LogIOExceptionStackTraces) clearStackTrace(exception)
     throw exception
   }
 
@@ -460,4 +461,7 @@ private[io] object TcpConnection {
     /** Release any open resources */
     def release(): Unit
   }
+
+  private[this] val emptyStackTrace = Array.empty[StackTraceElement]
+  def clearStackTrace(ex: Exception): Unit = ex.setStackTrace(emptyStackTrace)
 }
