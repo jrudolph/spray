@@ -1,5 +1,6 @@
 import sbt._
 import Keys._
+import spray.revolver.RevolverPlugin.Revolver
 
 object Build extends Build with DocSupport {
   import BuildSettings._
@@ -269,4 +270,10 @@ object Build extends Build with DocSupport {
       runtime(akkaSlf4j, logback) ++
       container(jettyWebApp, servlet30)
     )
+
+  lazy val extractionV2Example = Project("extraction-v2", file("examples/spray-routing/extraction-v2"))
+    .dependsOn(sprayCan, sprayRouting)
+    .settings(exampleSettings: _*)
+    .settings(Revolver.settings: _*)
+    .settings(libraryDependencies ++= compile(akkaActor))
 }

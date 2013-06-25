@@ -110,7 +110,7 @@ trait CacheKeyer extends (PartialFunction[RequestContext, Any])
 
 object CacheKeyer {
   implicit val Default: CacheKeyer = CacheKeyer {
-    case RequestContext(HttpRequest(GET, uri, _, _, _), _, _) ⇒ uri
+    case RequestContext(HttpRequest(GET, uri, _, _, _), _, _, _) ⇒ uri
   }
 
   def apply(f: PartialFunction[RequestContext, Any]) = new CacheKeyer {
