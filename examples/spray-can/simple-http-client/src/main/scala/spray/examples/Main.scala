@@ -24,29 +24,23 @@ object Main extends App
 
   val host = "spray.io"
 
-  import Spore.spore
+  import Spore.{spore, capture}
 
   val result =
     demoConnectionLevelApi(host).flatMap {
       spore {
-        val h = host
         val nextFunc = this.demoHostLevelApi(_)
 
-        result1 => nextFunc(h).flatMap {
+        result1 => nextFunc(capture(host)).flatMap {
           spore {
-            val h = host
             // I already have to assume here that when nesting spores it is
             // allowed to access things from out of the next level spore
             // which opens new loopholes for bugs.
             val nextFunc = this.demoRequestLevelApi(_)
 
-            result2 => nextFunc(h).map {
-              spore {
-                val r1 = result1
-                val r2 = result2
-                result3 => Set(r1, r2, result3)
-              }
-            }
+            result2 =>
+              for (result3 <- nextFunc(capture(host)))
+                yield Set(capture(result1), capture(result2), capture(result3))
           }
         }
       }
@@ -54,19 +48,16 @@ object Main extends App
 
   result onComplete {
     spore {
-      val l = log
-      val h = host
 
       {
-        case Success(res) => l.info("{} is running {}", h, res mkString ", ")
-        case Failure(error) => l.warning("Error: {}", error)
+        case Success(res) => capture(log).info("{} is running {}", capture(host), res mkString ", ")
+        case Failure(error) => capture(log).warning("Error: {}", error)
       }
     }
   }
   result onComplete {
     spore {
-      val s = system
-      _ => s.shutdown()
+      _ => capture(system).shutdown()
     }
   }
 }
@@ -82,4 +73,5 @@ object Spore {
   def spore[T, R](f: T => R): Spore1[T, R] = new Spore1[T, R] {
     def apply(v1: T): R = f(v1)
   }
+  def capture[T](v: T): T = v
 }
