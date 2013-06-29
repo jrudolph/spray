@@ -27,33 +27,24 @@ object Main extends App
   import Spore.{spore, capture}
 
   val result =
-    demoConnectionLevelApi(host).flatMap {
-      spore {
-        val nextFunc = this.demoHostLevelApi(_)
-        val nextFunc2 = this.demoRequestLevelApi(_)
+    demoConnectionLevelApi(host).flatMap { // implicit macro checks sporeness at all levels
+      val nextFunc = this.demoHostLevelApi(_)
+      val nextFunc2 = this.demoRequestLevelApi(_)
 
-        result1 =>
-          for {
-            result2 <- nextFunc(capture(host))
-            result3 <- capture(nextFunc2)(capture(host))
-          }
-            yield Set(capture(result1), capture(result2), capture(result3))
-      }
+      result1 =>
+        for {
+          result2 <- nextFunc(capture(host))
+          result3 <- capture(nextFunc2)(capture(host))
+        }
+          yield Set(capture(result1), capture(result2), capture(result3))
     }
 
-  result onComplete {
-    spore {
-
-      {
-        case Success(res) => capture(log).info("{} is running {}", capture(host), res mkString ", ")
-        case Failure(error) => capture(log).warning("Error: {}", error)
-      }
-    }
+  result onComplete { // implicit macro checks sporeness
+    case Success(res) => capture(log).info("{} is running {}", capture(host), res mkString ", ")
+    case Failure(error) => capture(log).warning("Error: {}", error)
   }
-  result onComplete {
-    spore {
-      _ => capture(system).shutdown()
-    }
+  result onComplete { // implicit macro checks sporeness
+    _ => capture(system).shutdown()
   }
 }
 
