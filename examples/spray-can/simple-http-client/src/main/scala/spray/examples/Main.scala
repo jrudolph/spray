@@ -24,20 +24,13 @@ object Main extends App
 
   val host = "spray.io"
 
-  import Spore.{spore, capture}
+  import Spore.capture
 
-  val result =
-    demoConnectionLevelApi(host).flatMap { // implicit macro checks sporeness at all levels
-      val nextFunc = this.demoHostLevelApi(_)
-      val nextFunc2 = this.demoRequestLevelApi(_)
-
-      result1 =>
-        for {
-          result2 <- nextFunc(capture(host))
-          result3 <- capture(nextFunc2)(capture(host))
-        }
-          yield Set(capture(result1), capture(result2), capture(result3))
-    }
+  val result = for {
+    result1 <- demoConnectionLevelApi(host)
+    result2 <- capture(this).demoHostLevelApi(capture(host))
+    result3 <- capture(this).demoRequestLevelApi(capture(host))
+  } yield Set(capture(result1), capture(result2), capture(result3))
 
   result onComplete { // implicit macro checks sporeness
     case Success(res) => capture(log).info("{} is running {}", capture(host), res mkString ", ")
