@@ -30,19 +30,14 @@ object Main extends App
     demoConnectionLevelApi(host).flatMap {
       spore {
         val nextFunc = this.demoHostLevelApi(_)
+        val nextFunc2 = this.demoRequestLevelApi(_)
 
-        result1 => nextFunc(capture(host)).flatMap {
-          spore {
-            // I already have to assume here that when nesting spores it is
-            // allowed to access things from out of the next level spore
-            // which opens new loopholes for bugs.
-            val nextFunc = this.demoRequestLevelApi(_)
-
-            result2 =>
-              for (result3 <- nextFunc(capture(host)))
-                yield Set(capture(result1), capture(result2), capture(result3))
+        result1 =>
+          for {
+            result2 <- nextFunc(capture(host))
+            result3 <- capture(nextFunc2)(capture(host))
           }
-        }
+            yield Set(capture(result1), capture(result2), capture(result3))
       }
     }
 
