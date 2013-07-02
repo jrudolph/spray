@@ -29,7 +29,8 @@ object BuildSettings {
       "-target:jvm-1.6",
       "-language:_",
       "-Xlog-reflective-calls"
-    )
+    ),
+    addCompilerPlugin("com.foursquare.lint" %% "linter" % "0.1-SNAPSHOT")
   )
 
   lazy val sprayModuleSettings =

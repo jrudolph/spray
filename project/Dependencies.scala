@@ -3,7 +3,8 @@ import sbt._
 object Dependencies {
 
   val resolutionRepos = Seq(
-    "spray repo" at "http://repo.spray.io/"
+    "spray repo" at "http://repo.spray.io/",
+    "linter" at "http://hairyfotr.github.io/linteRepo/releases"
   )
 
   def compile   (deps: ModuleID*): Seq[ModuleID] = deps map (_ % "compile")
