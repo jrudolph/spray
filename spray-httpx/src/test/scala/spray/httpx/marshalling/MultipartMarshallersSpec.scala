@@ -106,5 +106,39 @@ class MultipartMarshallersSpec extends Specification with MultipartMarshallers {
         }
     }
 
+    "correctly marshal 'multipart/form-data' with one field named 'attachment'" in {
+      marshal(MultipartFormData(Map(
+        "attachment" -> BodyPart("Blog online"),
+        "from" -> BodyPart("me@place.com"),
+        "subject" -> BodyPart("subject"),
+        //        "text" -> BodyPart("text"),
+        "to" -> BodyPart("him@there.com")))) ===
+        Right {
+          HttpEntity(
+            contentType = ContentType(`multipart/form-data` withBoundary "D2JjRnCSHFBYZ-8g9qgzXpiv"),
+            string = """|--D2JjRnCSHFBYZ-8g9qgzXpiv
+                       |Content-Disposition: form-data; name=attachment
+                       |Content-Type: text/plain
+                       |
+                       |Blog online
+                       |--D2JjRnCSHFBYZ-8g9qgzXpiv
+                       |Content-Disposition: form-data; name=from
+                       |Content-Type: text/plain
+                       |
+                       |me@place.com
+                       |--D2JjRnCSHFBYZ-8g9qgzXpiv
+                       |Content-Disposition: form-data; name=subject
+                       |Content-Type: text/plain
+                       |
+                       |subject
+                       |--D2JjRnCSHFBYZ-8g9qgzXpiv
+                       |Content-Disposition: form-data; name=to
+                       |Content-Type: text/plain
+                       |
+                       |him@there.com
+                       |--D2JjRnCSHFBYZ-8g9qgzXpiv--""".stripMargin.replace(EOL, "\r\n"))
+        }
+    }
+
   }
 }
