@@ -106,7 +106,7 @@ class MultipartMarshallersSpec extends Specification with MultipartMarshallers {
         }
     }
 
-    "correctly marshal 'multipart/form-data' with one field named 'attachment'" in {
+    "correctly marshal 'multipart/form-data' with a larger number of fields" in {
       marshal(MultipartFormData(Map(
         "attachment" -> BodyPart("Blog online"),
         "from" -> BodyPart("me@place.com"),
