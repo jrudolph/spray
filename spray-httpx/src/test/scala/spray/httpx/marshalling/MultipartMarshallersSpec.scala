@@ -23,6 +23,7 @@ import spray.http._
 import MediaTypes._
 import HttpCharsets._
 import HttpHeaders._
+import scala.collection.immutable.ListMap
 
 class MultipartMarshallersSpec extends Specification with MultipartMarshallers {
   override protected val multipartBoundaryRandom = new Random(0) // fix for stable value
@@ -107,11 +108,11 @@ class MultipartMarshallersSpec extends Specification with MultipartMarshallers {
     }
 
     "correctly marshal 'multipart/form-data' with a larger number of fields" in {
-      marshal(MultipartFormData(Map(
+      marshal(MultipartFormData(ListMap(
         "attachment" -> BodyPart("Blog online"),
         "from" -> BodyPart("me@place.com"),
         "subject" -> BodyPart("subject"),
-        //        "text" -> BodyPart("text"),
+        "text" -> BodyPart("text"),
         "to" -> BodyPart("him@there.com")))) ===
         Right {
           HttpEntity(
@@ -131,6 +132,11 @@ class MultipartMarshallersSpec extends Specification with MultipartMarshallers {
                        |Content-Type: text/plain
                        |
                        |subject
+                       |--D2JjRnCSHFBYZ-8g9qgzXpiv
+                       |Content-Disposition: form-data; name=text
+                       |Content-Type: text/plain
+                       |
+                       |text
                        |--D2JjRnCSHFBYZ-8g9qgzXpiv
                        |Content-Disposition: form-data; name=to
                        |Content-Type: text/plain
