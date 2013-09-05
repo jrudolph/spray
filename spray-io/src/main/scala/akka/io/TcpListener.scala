@@ -8,20 +8,21 @@ import java.nio.channels.{ SocketChannel, SelectionKey, ServerSocketChannel }
 import java.net.InetSocketAddress
 import scala.annotation.tailrec
 import scala.util.control.NonFatal
-import akka.actor.{ Props, ActorLogging, ActorRef, Actor }
+import akka.actor._
 import akka.io.SelectionHandler._
 import akka.io.Tcp._
+import akka.dispatch.{ UnboundedMessageQueueSemantics, RequiresMessageQueue }
 
 /**
  * INTERNAL API
  */
 private[io] object TcpListener {
 
-  case class RegisterIncoming(channel: SocketChannel) extends HasFailureMessage {
+  case class RegisterIncoming(channel: SocketChannel) extends HasFailureMessage with NoSerializationVerificationNeeded {
     def failureMessage = FailedRegisterIncoming(channel)
   }
 
-  case class FailedRegisterIncoming(channel: SocketChannel)
+  case class FailedRegisterIncoming(channel: SocketChannel) extends NoSerializationVerificationNeeded
 
 }
 
@@ -33,7 +34,7 @@ private[io] class TcpListener(selectorRouter: ActorRef,
                               channelRegistry: ChannelRegistry,
                               bindCommander: ActorRef,
                               bind: Bind)
-    extends Actor with ActorLogging {
+  extends Actor with ActorLogging with RequiresMessageQueue[UnboundedMessageQueueSemantics] {
 
   import TcpListener._
   import tcp.Settings._
@@ -61,6 +62,8 @@ private[io] class TcpListener(selectorRouter: ActorRef,
         log.debug("Bind failed for TCP channel on endpoint [{}]: {}", bind.localAddress, e)
         context.stop(self)
     }
+
+  override def supervisorStrategy = SelectionHandler.connectionSupervisorStrategy
 
   def receive: Receive = {
     case registration: ChannelRegistration ⇒
@@ -98,13 +101,14 @@ private[io] class TcpListener(selectorRouter: ActorRef,
     if (socketChannel != null) {
       log.debug("New connection accepted")
       socketChannel.configureBlocking(false)
-      def props(registry: ChannelRegistry) = Props(new TcpIncomingConnection(tcp, socketChannel, registry, bind.handler, bind.options))
+      def props(registry: ChannelRegistry) =
+        Props(classOf[TcpIncomingConnection], tcp, socketChannel, registry, bind.handler, bind.options)
       selectorRouter ! WorkerForCommand(RegisterIncoming(socketChannel), self, props)
       acceptAllPending(registration, limit - 1)
     } else registration.enableInterest(SelectionKey.OP_ACCEPT)
   }
 
-  override def postStop(): Unit = {
+  override def postStop() {
     try {
       if (channel.isOpen) {
         log.debug("Closing serverSocketChannel after being stopped")

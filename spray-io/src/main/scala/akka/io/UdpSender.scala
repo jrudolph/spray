@@ -6,6 +6,7 @@ package akka.io
 import java.nio.channels.DatagramChannel
 import scala.collection.immutable
 import scala.util.control.NonFatal
+import akka.dispatch.{ RequiresMessageQueue, UnboundedMessageQueueSemantics }
 import akka.io.Inet.SocketOption
 import akka.io.Udp._
 import akka.actor._
@@ -17,7 +18,7 @@ private[io] class UdpSender(val udp: UdpExt,
                             channelRegistry: ChannelRegistry,
                             commander: ActorRef,
                             options: immutable.Traversable[SocketOption])
-    extends Actor with ActorLogging with WithUdpSend {
+    extends Actor with ActorLogging with WithUdpSend with RequiresMessageQueue[UnboundedMessageQueueSemantics] {
 
   val channel = {
     val datagramChannel = DatagramChannel.open

@@ -9,6 +9,7 @@ import java.nio.channels.SelectionKey._
 import scala.annotation.tailrec
 import scala.util.control.NonFatal
 import akka.actor.{ Actor, ActorLogging, ActorRef }
+import akka.dispatch.{ UnboundedMessageQueueSemantics, RequiresMessageQueue }
 import akka.util.ByteString
 import akka.io.SelectionHandler._
 import akka.io.UdpConnected._
@@ -19,7 +20,9 @@ import akka.io.UdpConnected._
 private[io] class UdpConnection(udpConn: UdpConnectedExt,
                                 channelRegistry: ChannelRegistry,
                                 commander: ActorRef,
-                                connect: Connect) extends Actor with ActorLogging {
+                                connect: Connect)
+    extends Actor with ActorLogging with RequiresMessageQueue[UnboundedMessageQueueSemantics] {
+
   import connect._
   import udpConn._
   import udpConn.settings._

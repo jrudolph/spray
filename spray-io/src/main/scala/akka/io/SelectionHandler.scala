@@ -14,6 +14,9 @@ import scala.annotation.tailrec
 import scala.util.control.NonFatal
 import scala.concurrent.ExecutionContext
 import akka.event.LoggingAdapter
+import akka.dispatch.{ UnboundedMessageQueueSemantics, RequiresMessageQueue }
+import akka.util.Helpers.Requiring
+import akka.util.SerializedSuspendableExecutionContext
 import akka.actor._
 import akka.routing.RandomRouter
 import akka.event.Logging
@@ -23,15 +26,14 @@ abstract class SelectionHandlerSettings(config: Config) {
 
   val MaxChannels: Int = getString("max-channels") match {
     case "unlimited" ⇒ -1
-    case _           ⇒ getInt("max-channels")
+    case _           ⇒ getInt("max-channels") requiring (_ > 0, "max-channels must be > 0 or 'unlimited'")
   }
-  val SelectorAssociationRetries: Int = getInt("selector-association-retries")
+  val SelectorAssociationRetries: Int = getInt("selector-association-retries") requiring (
+    _ >= 0, "selector-association-retries must be >= 0")
+
   val SelectorDispatcher: String = getString("selector-dispatcher")
   val WorkerDispatcher: String = getString("worker-dispatcher")
   val TraceLogging: Boolean = getBoolean("trace-logging")
-
-  require(MaxChannels == -1 || MaxChannels > 0, "max-channels must be > 0 or 'unlimited'")
-  require(SelectorAssociationRetries >= 0, "selector-association-retries must be >= 0")
 
   def MaxChannelsPerSelector: Int
 }
@@ -52,7 +54,7 @@ private[io] trait ChannelRegistry {
  * a result of it having called `register` on the `ChannelRegistry`.
  * Enables a channel actor to directly schedule interest setting tasks to the selector mgmt. dispatcher.
  */
-private[io] trait ChannelRegistration {
+private[io] trait ChannelRegistration extends NoSerializationVerificationNeeded {
   def enableInterest(op: Int)
   def disableInterest(op: Int)
 }
@@ -64,8 +66,9 @@ private[io] object SelectionHandler {
   }
 
   case class WorkerForCommand(apiCommand: HasFailureMessage, commander: ActorRef, childProps: ChannelRegistry ⇒ Props)
+    extends NoSerializationVerificationNeeded
 
-  case class Retry(command: WorkerForCommand, retriesLeft: Int) { require(retriesLeft >= 0) }
+  case class Retry(command: WorkerForCommand, retriesLeft: Int) extends NoSerializationVerificationNeeded { require(retriesLeft >= 0) }
 
   case object ChannelConnectable
   case object ChannelAcceptable
@@ -74,14 +77,31 @@ private[io] object SelectionHandler {
 
   private[io] abstract class SelectorBasedManager(selectorSettings: SelectionHandlerSettings, nrOfSelectors: Int) extends Actor {
 
+    override def supervisorStrategy = connectionSupervisorStrategy
+
     val selectorPool = context.actorOf(
-      props = Props(new SelectionHandler(selectorSettings)).withRouter(RandomRouter(nrOfSelectors)),
+      props = Props(classOf[SelectionHandler], selectorSettings).withRouter(RandomRouter(nrOfSelectors)).withDeploy(Deploy.local),
       name = "selectors")
 
-    def workerForCommandHandler(pf: PartialFunction[HasFailureMessage, ChannelRegistry ⇒ Props]): Receive = {
+    final def workerForCommandHandler(pf: PartialFunction[HasFailureMessage, ChannelRegistry ⇒ Props]): Receive = {
       case cmd: HasFailureMessage if pf.isDefinedAt(cmd) ⇒ selectorPool ! WorkerForCommand(cmd, sender, pf(cmd))
     }
   }
+
+  /**
+   * Special supervisor strategy for parents of TCP connection and listener actors.
+   * Stops the child on all errors and logs DeathPactExceptions only at debug level.
+   */
+  private[io] final val connectionSupervisorStrategy: SupervisorStrategy =
+    new OneForOneStrategy()(SupervisorStrategy.stoppingStrategy.decider) {
+      override def logFailure(context: ActorContext, child: ActorRef, cause: Throwable,
+                              decision: SupervisorStrategy.Directive): Unit =
+        if (cause.isInstanceOf[DeathPactException]) {
+          try context.system.eventStream.publish {
+            Logging.Debug(child.path.toString, getClass, "Closed after handler termination")
+          } catch { case NonFatal(_) ⇒ }
+        } else super.logFailure(context, child, cause, decision)
+    }
 
   private class ChannelRegistryImpl(executionContext: ExecutionContext, log: LoggingAdapter) extends ChannelRegistry {
     private[this] val selector = SelectorProvider.provider.openSelector
@@ -191,7 +211,7 @@ private[io] object SelectionHandler {
     // FIXME: Add possibility to signal failure of task to someone
     private abstract class Task extends Runnable {
       def tryRun()
-      def run(): Unit = {
+      def run() {
         try tryRun()
         catch {
           case _: CancelledKeyException ⇒ // ok, can be triggered while setting interest ops
@@ -202,13 +222,17 @@ private[io] object SelectionHandler {
   }
 }
 
-private[io] class SelectionHandler(settings: SelectionHandlerSettings) extends Actor with ActorLogging {
+private[io] class SelectionHandler(settings: SelectionHandlerSettings) extends Actor with ActorLogging
+    with RequiresMessageQueue[UnboundedMessageQueueSemantics] {
   import SelectionHandler._
   import settings._
 
   private[this] var sequenceNumber = 0
   private[this] var childCount = 0
-  private[this] val registry = new ChannelRegistryImpl(context.system.dispatchers.lookup(SelectorDispatcher), log)
+  private[this] val registry = {
+    val dispatcher = context.system.dispatchers.lookup(SelectorDispatcher)
+    new ChannelRegistryImpl(SerializedSuspendableExecutionContext(dispatcher.throughput)(dispatcher), log)
+  }
 
   def receive: Receive = {
     case cmd: WorkerForCommand   ⇒ spawnChildWithCapacityProtection(cmd, SelectorAssociationRetries)
@@ -223,14 +247,31 @@ private[io] class SelectionHandler(settings: SelectionHandlerSettings) extends A
   override def postStop(): Unit = registry.shutdown()
 
   // we can never recover from failures of a connection or listener child
-  override def supervisorStrategy = SupervisorStrategy.stoppingStrategy
+  // and log the failure at debug level
+  override def supervisorStrategy = {
+    def stoppingDecider: SupervisorStrategy.Decider = {
+      case _: Exception ⇒ SupervisorStrategy.Stop
+    }
+    new OneForOneStrategy()(stoppingDecider) {
+      override def logFailure(context: ActorContext, child: ActorRef, cause: Throwable,
+                              decision: SupervisorStrategy.Directive): Unit =
+        try {
+          val logMessage = cause match {
+            case e: ActorInitializationException if e.getCause ne null ⇒ e.getCause.getMessage
+            case e ⇒ e.getMessage
+          }
+          context.system.eventStream.publish(
+            Logging.Debug(child.path.toString, classOf[SelectionHandler], logMessage))
+        } catch { case NonFatal(_) ⇒ }
+    }
+  }
 
   def spawnChildWithCapacityProtection(cmd: WorkerForCommand, retriesLeft: Int): Unit = {
     if (TraceLogging) log.debug("Executing [{}]", cmd)
     if (MaxChannelsPerSelector == -1 || childCount < MaxChannelsPerSelector) {
       val newName = sequenceNumber.toString
       sequenceNumber += 1
-      val child = context.actorOf(props = cmd.childProps(registry).withDispatcher(WorkerDispatcher), name = newName)
+      val child = context.actorOf(props = cmd.childProps(registry).withDispatcher(WorkerDispatcher).withDeploy(Deploy.local), name = newName)
       childCount += 1
       if (MaxChannelsPerSelector > 0) context.watch(child) // we don't need to watch if we aren't limited
     } else {
