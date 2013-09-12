@@ -9,7 +9,6 @@ import java.nio.channels.{ SelectionKey, SocketChannel }
 import java.net.ConnectException
 import scala.collection.immutable
 import scala.concurrent.duration.Duration
-import scala.concurrent.duration._
 import akka.actor.{ ReceiveTimeout, ActorRef }
 import akka.io.Inet.SocketOption
 import akka.io.TcpConnection.CloseInformation
@@ -57,13 +56,13 @@ private[io] class TcpOutgoingConnection(_tcp: TcpExt,
           completeConnect(registration, commander, options)
         else {
           registration.enableInterest(SelectionKey.OP_CONNECT)
-          context.become(connecting(registration, commander, options, tcp.Settings.FinishConnectRetries))
+          context.become(connecting(registration, commander, options))
         }
       }
   }
 
   def connecting(registration: ChannelRegistration, commander: ActorRef,
-                 options: immutable.Traversable[SocketOption], remainingFinishConnectRetries: Int): Receive = {
+                 options: immutable.Traversable[SocketOption]): Receive = {
     case ChannelConnectable ⇒
       reportConnectFailure {
         if (channel.finishConnect()) {
@@ -71,16 +70,8 @@ private[io] class TcpOutgoingConnection(_tcp: TcpExt,
           log.debug("Connection established to [{}]", remoteAddress)
           completeConnect(registration, commander, options)
         } else {
-          if (remainingFinishConnectRetries > 0) {
-            context.system.scheduler.scheduleOnce(1.millisecond) {
-              channelRegistry.register(channel, SelectionKey.OP_CONNECT)
-            }(context.dispatcher)
-            context.become(connecting(registration, commander, options, remainingFinishConnectRetries - 1))
-          } else {
-            log.debug("Could not establish connection because finishConnect " +
-              "never returned true (consider increasing akka.io.tcp.finish-connect-retries)")
-            stop()
-          }
+          log.debug("Could not establish connection because finishConnect didn't return true")
+          stop()
         }
       }
 
