@@ -96,7 +96,7 @@ class ModelConverterSpec extends Specification with NoTimeConversions {
 
   case class RequestMock(uri: Uri = Uri./,
                          method: String = "GET",
-                         remoteAddr: String = remoteAddress.ip.value,
+                         remoteAddr: String = remoteAddress.ip.getHostAddress,
                          content: String = "",
                          headers: Seq[(String, String)] = Nil) extends HttpServletRequest {
     import scala.collection.JavaConverters._

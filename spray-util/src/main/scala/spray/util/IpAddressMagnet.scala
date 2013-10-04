@@ -14,15 +14,12 @@
  * limitations under the License.
  */
 
-package spray.http
+package spray.util
 
 import java.net.InetAddress
 
-case class HttpIp(ip: InetAddress) extends ValueRenderable {
-  def render[R <: Rendering](r: R): r.type = r ~~ ip.getHostAddress
-}
-
-object HttpIp {
-  implicit def apply(s: String): HttpIp = InetAddress.getByName(s)
-  implicit def fromInetAddress(a: InetAddress): HttpIp = apply(a)
+case class IpAddressMagnet(ip: InetAddress)
+object IpAddressMagnet {
+  implicit def apply(s: String): IpAddressMagnet = InetAddress.getByName(s)
+  implicit def fromInetAddress(a: InetAddress): IpAddressMagnet = apply(a)
 }

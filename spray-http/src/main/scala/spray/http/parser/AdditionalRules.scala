@@ -19,16 +19,18 @@ package parser
 
 import org.parboiled.scala._
 import BasicRules._
+import java.net.InetAddress
 
 // implementation of additional parsing rules required for extensions that are not in the core HTTP standard
 private[parser] trait AdditionalRules {
   this: Parser ⇒
 
-  def Ip: Rule1[HttpIp] = rule(
-    group(IpNumber ~ ch('.') ~ IpNumber ~ ch('.') ~ IpNumber ~ ch('.') ~ IpNumber) ~> (HttpIp(_)) ~ OptWS)
+  def Ip: Rule1[InetAddress] = rule(
+    IpNumberByte ~ ch('.') ~ IpNumberByte ~ ch('.') ~ IpNumberByte ~ ch('.') ~ IpNumberByte ~~>
+      ((i1, i2, i3, i4) ⇒ InetAddress.getByAddress(Array[Byte](i1, i2, i3, i4))) ~ OptWS)
 
-  def IpNumber = rule {
-    Digit ~ optional(Digit ~ optional(Digit))
+  def IpNumberByte: Rule1[Byte] = rule {
+    group(Digit ~ optional(Digit ~ optional(Digit))) ~> (_.toInt.toByte)
   }
 
   def Challenge = rule {

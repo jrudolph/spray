@@ -18,7 +18,7 @@ package spray.http
 package parser
 
 import org.parboiled.scala._
-import spray.util.identityFunc
+import spray.util.{ IpAddressMagnet, identityFunc }
 import BasicRules._
 import HttpHeaders._
 import ProtectedHeaderCreation.enable
@@ -90,7 +90,7 @@ private[parser] trait SimpleHeaders {
   // were not quoted and that's also what the "Transition" section in the draft says:
   // http://tools.ietf.org/html/draft-ietf-appsawg-http-forwarded-10
   def `*X-Forwarded-For` = rule {
-    oneOrMore((Ip | IPv6Address ~> (HttpIp(_))) ~~> (Some(_)) | "unknown" ~ push(None), separator = ListSep) ~ EOI ~~>
+    oneOrMore((Ip | IPv6Address ~> (IpAddressMagnet(_).ip)) ~~> (Some(_)) | "unknown" ~ push(None), separator = ListSep) ~ EOI ~~>
       (`X-Forwarded-For`(_))
   }
 }

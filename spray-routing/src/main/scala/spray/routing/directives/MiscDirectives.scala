@@ -24,6 +24,7 @@ import spray.http.parser.CharPredicate
 import spray.util._
 import HttpHeaders._
 import MediaTypes._
+import java.net.InetAddress
 
 trait MiscDirectives {
   import BasicDirectives._
@@ -43,10 +44,10 @@ trait MiscDirectives {
    * Directive extracting the IP of the client from either the X-Forwarded-For, Remote-Address or X-Real-IP header
    * (in that order of priority).
    */
-  lazy val clientIP: Directive1[HttpIp] =
+  lazy val clientIP: Directive1[InetAddress] =
     (headerValuePF { case `X-Forwarded-For`(ips) if ips.flatten.nonEmpty ⇒ ips.flatten.head }) |
       (headerValuePF { case `Remote-Address`(ip) ⇒ ip }) |
-      (headerValuePF { case h if h.is("x-real-ip") ⇒ h.value })
+      (headerValuePF { case h if h.is("x-real-ip") ⇒ IpAddressMagnet(h.value).ip })
 
   /**
    * Wraps the inner Route with JSONP support. If a query parameter with the given name is present in the request and

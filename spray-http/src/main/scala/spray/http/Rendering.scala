@@ -106,6 +106,10 @@ object Renderer {
         }
       }
     }
+
+  def renderBy[T, U](f: T ⇒ U)(implicit uRenderer: Renderer[U]): Renderer[T] = new Renderer[T] {
+    def render[R <: Rendering](r: R, value: T): r.type = uRenderer.render(r, f(value))
+  }
 }
 
 trait Rendering {

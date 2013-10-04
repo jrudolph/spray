@@ -25,6 +25,7 @@ import HttpCharsets._
 import HttpEncodings._
 import HttpMethods._
 import parser.HttpParser
+import spray.util.IpAddressMagnet
 
 class HttpHeaderSpec extends Specification {
 
@@ -207,7 +208,7 @@ class HttpHeaderSpec extends Specification {
       p ^
       "X-Forwarded-For: 1.2.3.4" ! example(`X-Forwarded-For`("1.2.3.4"))_ ^
       "X-Forwarded-For: 234.123.5.6, 8.8.8.8" ! example(`X-Forwarded-For`("234.123.5.6", "8.8.8.8"))_ ^
-      "X-Forwarded-For: 1.2.3.4, unknown" ! example(`X-Forwarded-For`(Seq(Some(HttpIp("1.2.3.4")), None)))_ ^
+      "X-Forwarded-For: 1.2.3.4, unknown" ! example(`X-Forwarded-For`(Seq(Some(IpAddressMagnet("1.2.3.4").ip), None)))_ ^
       "X-Forwarded-For: 0:0:0:0:0:0:0:1" ! example(`X-Forwarded-For`("::1"))_ ^
       "X-Forwarded-For: 192.0.2.43, 2001:db8:cafe:0:0:0:0:17" ! example(`X-Forwarded-For`("192.0.2.43", "2001:db8:cafe::17"))_ ^
       p ^

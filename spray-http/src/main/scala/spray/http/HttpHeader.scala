@@ -17,7 +17,7 @@
 package spray.http
 
 import scala.annotation.{ implicitNotFound, tailrec }
-import java.net.InetSocketAddress
+import java.net.{ InetAddress, InetSocketAddress }
 import spray.util._
 
 abstract class HttpHeader extends ToStringRenderable {
@@ -306,9 +306,11 @@ object HttpHeaders {
     protected def companion = `Raw-Request-URI`
   }
 
-  object `Remote-Address` extends ModeledCompanion
-  case class `Remote-Address`(ip: HttpIp) extends ModeledHeader {
-    def renderValue[R <: Rendering](r: R): r.type = r ~~ ip
+  object `Remote-Address` extends ModeledCompanion {
+    def apply(ip: IpAddressMagnet): `Remote-Address` = `Remote-Address`(ip.ip)
+  }
+  case class `Remote-Address`(ip: InetAddress) extends ModeledHeader {
+    def renderValue[R <: Rendering](r: R): r.type = r ~~ ip.getHostAddress
     protected def companion = `Remote-Address`
   }
 
@@ -369,10 +371,11 @@ object HttpHeaders {
   }
 
   object `X-Forwarded-For` extends ModeledCompanion {
-    def apply(first: HttpIp, more: HttpIp*): `X-Forwarded-For` = apply((first +: more).map(Some(_)))
-    implicit val ipsRenderer = Renderer.defaultSeqRenderer[Option[HttpIp]](Renderer.optionRenderer("unknown"))
+    def apply(first: IpAddressMagnet, more: IpAddressMagnet*): `X-Forwarded-For` = apply((first +: more).map(x ⇒ Some(x.ip)))
+    implicit def ipRenderer = Renderer.renderBy[InetAddress, String](_.getHostAddress)
+    implicit val ipsRenderer = Renderer.defaultSeqRenderer[Option[InetAddress]](Renderer.optionRenderer("unknown"))
   }
-  case class `X-Forwarded-For`(ips: Seq[Option[HttpIp]]) extends ModeledHeader {
+  case class `X-Forwarded-For`(ips: Seq[Option[InetAddress]]) extends ModeledHeader {
     import `X-Forwarded-For`.ipsRenderer
     def renderValue[R <: Rendering](r: R): r.type = r ~~ ips
     protected def companion = `X-Forwarded-For`
