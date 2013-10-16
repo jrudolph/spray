@@ -31,14 +31,15 @@ import MediaTypes._
  * Immutable object encapsulating the context of an [[spray.http.HttpRequest]]
  * as it flows through a ''spray'' Route structure.
  */
-case class RequestContext(request: HttpRequest, responder: ActorRef, unmatchedPath: Uri.Path) {
+case class RequestContext(requestStart: HttpRequestStart, responder: ActorRef, unmatchedPath: Uri.Path) {
+  def request = requestStart.message
 
   /**
    * Returns a copy of this context with the HttpRequest transformed by the given function.
    */
   def withRequestMapped(f: HttpRequest ⇒ HttpRequest): RequestContext = {
-    val transformed = f(request)
-    if (transformed eq request) this else copy(request = transformed)
+    val transformed = requestStart.mapMessage(f)
+    if (transformed eq requestStart) this else copy(requestStart = transformed)
   }
 
   /**
@@ -187,7 +188,7 @@ case class RequestContext(request: HttpRequest, responder: ActorRef, unmatchedPa
    * Removes a potentially existing Accept header from the request headers.
    */
   def withContentNegotiationDisabled =
-    copy(request = request.withHeaders(request.headers filterNot (_.isInstanceOf[Accept])))
+    copy(requestStart = requestStart.mapHeaders(_ filterNot (_.isInstanceOf[Accept])))
 
   /**
    * Rejects the request with the given rejections.

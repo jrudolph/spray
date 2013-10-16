@@ -35,7 +35,7 @@ trait EncodingDirectives {
     def applyDecoder = mapInnerRoute { inner ⇒
       ctx ⇒
         tryToEither(decoder.decode(ctx.request)) match {
-          case Right(decodedRequest) ⇒ inner(ctx.copy(request = decodedRequest))
+          case Right(decodedRequest) ⇒ inner(ctx.withRequestMapped(_ ⇒ decodedRequest))
           case Left(error)           ⇒ ctx.reject(CorruptRequestEncodingRejection(error.getMessage.nullAsEmpty))
         }
     }

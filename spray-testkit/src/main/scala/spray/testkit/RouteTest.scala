@@ -111,7 +111,7 @@ trait RouteTest extends RequestBuilding with RouteResultComponent {
               defaultHostHeader = defaultHostInfo.host)
           ExecutionDirectives.handleExceptions(eh orElse ExceptionHandler.default)(route) {
             RequestContext(
-              request = effectiveRequest,
+              requestStart = effectiveRequest,
               responder = routeResult.handler,
               unmatchedPath = effectiveRequest.uri.path)
           }

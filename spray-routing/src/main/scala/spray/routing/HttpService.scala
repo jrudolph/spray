@@ -45,6 +45,10 @@ trait HttpServiceBase extends Directives {
         val ctx = RequestContext(request, ac.sender, request.uri.path).withDefaultSender(ac.self)
         runSealedRoute(ctx)
 
+      case requestStart: ChunkedRequestStart ⇒
+        val ctx = RequestContext(requestStart, ac.sender, requestStart.request.uri.path).withDefaultSender(ac.self)
+        runSealedRoute(ctx)
+
       case ctx: RequestContext ⇒ runSealedRoute(ctx)
 
       case Tcp.Connected(_, _) ⇒
