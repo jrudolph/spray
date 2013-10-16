@@ -61,9 +61,21 @@ object HttpResponsePart {
 }
 
 sealed trait HttpMessageStart extends HttpMessagePart {
-  def message: HttpMessage
+  type Message <: HttpMessage
+  type Self <: HttpMessageStart
+  def message: Message
 
-  def mapHeaders(f: List[HttpHeader] ⇒ List[HttpHeader]): HttpMessageStart
+  def mapMessage(m: Message ⇒ Message): Self
+  def mapHeaders(f: List[HttpHeader] ⇒ List[HttpHeader]): Self
+}
+
+sealed trait HttpRequestStart extends HttpMessageStart with HttpRequestPart {
+  type Message = HttpRequest
+  type Self <: HttpRequestStart
+}
+sealed trait HttpResponseStart extends HttpMessageStart with HttpResponsePart {
+  type Message = HttpResponse
+  type Self <: HttpResponseStart
 }
 
 object HttpMessageStart {
@@ -74,8 +86,10 @@ sealed trait HttpMessageEnd extends HttpMessagePart
 
 sealed abstract class HttpMessage extends HttpMessageStart with HttpMessageEnd {
   type Self <: HttpMessage
+  def self: Self
+  type Message = Self
 
-  def message: Self
+  def message: Self = self
   def isRequest: Boolean
   def isResponse: Boolean
 
@@ -131,6 +145,8 @@ sealed abstract class HttpMessage extends HttpMessageStart with HttpMessageEnd {
         val chunks: Stream[HttpMessagePart] = data.toChunkStream(maxChunkSize).map(MessageChunk(_))
         start #:: chunks append Stream(ChunkedMessageEnd)
     }
+
+  def mapMessage(f: Self ⇒ Self): Self = f(self)
 }
 
 object HttpMessage {
@@ -148,11 +164,12 @@ case class HttpRequest(method: HttpMethod = HttpMethods.GET,
                        uri: Uri = Uri./,
                        headers: List[HttpHeader] = Nil,
                        entity: HttpEntity = HttpEntity.Empty,
-                       protocol: HttpProtocol = HttpProtocols.`HTTP/1.1`) extends HttpMessage with HttpRequestPart {
+                       protocol: HttpProtocol = HttpProtocols.`HTTP/1.1`) extends HttpMessage with HttpRequestStart {
   require(!uri.isEmpty, "An HttpRequest must not have an empty Uri")
 
   type Self = HttpRequest
-  def message = this
+  override type Message = Self
+  def self: Self = this
   def isRequest = true
   def isResponse = false
 
@@ -279,10 +296,11 @@ case class HttpRequest(method: HttpMethod = HttpMethods.GET,
 case class HttpResponse(status: StatusCode = StatusCodes.OK,
                         entity: HttpEntity = HttpEntity.Empty,
                         headers: List[HttpHeader] = Nil,
-                        protocol: HttpProtocol = HttpProtocols.`HTTP/1.1`) extends HttpMessage with HttpResponsePart {
+                        protocol: HttpProtocol = HttpProtocols.`HTTP/1.1`) extends HttpMessage with HttpResponseStart {
   type Self = HttpResponse
+  def self: Self = this
+  override type Message = Self
 
-  def message = this
   def isRequest = false
   def isResponse = true
 
@@ -297,7 +315,9 @@ case class HttpResponse(status: StatusCode = StatusCodes.OK,
 /**
  * Instance of this class represent the individual chunks of a chunked HTTP message (request or response).
  */
-case class MessageChunk(data: HttpData.NonEmpty, extension: String) extends HttpRequestPart with HttpResponsePart
+case class MessageChunk(data: HttpData.NonEmpty, extension: String) extends HttpRequestPart with HttpResponsePart {
+  type Self = MessageChunk
+}
 
 object MessageChunk {
   import HttpCharsets._
@@ -320,16 +340,23 @@ object MessageChunk {
     }
 }
 
-case class ChunkedRequestStart(request: HttpRequest) extends HttpMessageStart with HttpRequestPart {
+case class ChunkedRequestStart(request: HttpRequest) extends HttpRequestStart {
+  type Self = ChunkedRequestStart
+
   def message = request
 
+  def mapMessage(f: HttpRequest ⇒ HttpRequest): ChunkedRequestStart =
+    ChunkedRequestStart(f(request))
   def mapHeaders(f: List[HttpHeader] ⇒ List[HttpHeader]): ChunkedRequestStart =
     ChunkedRequestStart(request mapHeaders f)
 }
 
-case class ChunkedResponseStart(response: HttpResponse) extends HttpMessageStart with HttpResponsePart {
+case class ChunkedResponseStart(response: HttpResponse) extends HttpResponseStart {
+  type Self = ChunkedResponseStart
   def message = response
 
+  def mapMessage(f: HttpResponse ⇒ HttpResponse): ChunkedResponseStart =
+    ChunkedResponseStart(f(response))
   def mapHeaders(f: List[HttpHeader] ⇒ List[HttpHeader]): ChunkedResponseStart =
     ChunkedResponseStart(response mapHeaders f)
 }
@@ -337,6 +364,8 @@ case class ChunkedResponseStart(response: HttpResponse) extends HttpMessageStart
 object ChunkedMessageEnd extends ChunkedMessageEnd("", Nil)
 case class ChunkedMessageEnd(extension: String = "",
                              trailer: List[HttpHeader] = Nil) extends HttpRequestPart with HttpResponsePart with HttpMessageEnd {
+  type Self = ChunkedMessageEnd
+
   if (!trailer.isEmpty) {
     require(trailer.forall(_.isNot("content-length")), "Content-Length header is not allowed in trailer")
     require(trailer.forall(_.isNot("transfer-encoding")), "Transfer-Encoding header is not allowed in trailer")
