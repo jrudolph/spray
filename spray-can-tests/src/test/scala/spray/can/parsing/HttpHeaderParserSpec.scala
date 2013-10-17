@@ -148,7 +148,8 @@ class HttpHeaderParserSpec extends Specification {
           | |   ┌─d-a-t-e-:- (Date)
           | |   | └─e-x-p-e-c-t-:-(Expect)- -1-0-0---c-o-n-t-i-n-u-e-\r-\n- Expect: 100-continue
           | | ┌─h-o-s-t-:- (Host)
-          | | | |   ┌─a-s-t---m-o-d-i-f-i-e-d-:- (Last-Modified)
+          | | | |     ┌─a-s-t---m-o-d-i-f-i-e-d-:- (Last-Modified)
+          | | | |   ┌─i-n-k-:- (Link)
           | | | └─l-o-c-a-t-i-o-n-:- (Location)
           | | |   └─o-r-i-g-i-n-:- (Origin)
           | └─p-r-o-x-y---a-u-t-h-e-n-t-i-c-a-t-e-:- (Proxy-Authenticate)
@@ -162,7 +163,7 @@ class HttpHeaderParserSpec extends Specification {
           |       └─x---f-o-r-w-a-r-d-e-d---f-o-r-:- (X-Forwarded-For)
           |""" -> parser.formatTrie
       }
-      parser.formatSizes === "514 nodes, 32 nodeData rows, 46 values"
+      parser.formatSizes === "519 nodes, 33 nodeData rows, 47 values"
       parser.contentHistogram ===
         Map("Connection" -> 3, "Content-Length" -> 1, "Accept" -> 2, "Cache-Control" -> 2, "Expect" -> 1)
     }
@@ -234,7 +235,7 @@ class HttpHeaderParserSpec extends Specification {
       randomHeaders.take(300).foldLeft(0) {
         case (acc, rawHeader) ⇒ acc + parseAndCache(rawHeader.toString + "\r\nx", rawHeader)
       } === 104
-      parser.formatSizes === "3068 nodes, 110 nodeData rows, 255 values"
+      parser.formatSizes === "3065 nodes, 109 nodeData rows, 255 values"
     }
 
     "continue parsing modelled headers even if the overall cache capacity is reached" in new TestSetup() {
@@ -245,8 +246,8 @@ class HttpHeaderParserSpec extends Specification {
       }
       randomHostHeaders.take(300).foldLeft(0) {
         case (acc, header) ⇒ acc + parseAndCache(header.toString + "\r\nx", header)
-      } === 209
-      parser.formatSizes === "3204 nodes, 185 nodeData rows, 255 values"
+      } === 208
+      parser.formatSizes === "3197 nodes, 185 nodeData rows, 255 values"
     }
 
     "continue parsing raw headers even if the header-specific cache capacity is reached" in new TestSetup() {
