@@ -117,15 +117,13 @@ However, we would like to make sure that we as the project maintainers as well a
 with regard to the legal aspects of their contributions. This is why we can only accept patches if the patch is your
 original work and you license your work to the *spray* project under the :ref:`project's open source license <license>`.
 
-In order the provide a proper legal foundation for this we need to ask you to sign `our CLA`_, which is a direct
-adaptation of the `Apache Foundation's Individual Contributor License Agreement V2.0`__.
+In order the provide a proper legal foundation for this we need to ask you to sign `the Typesafe CLA`_.
 
 If you have not already done so, please download_, complete and sign a copy of the CLA and then scan and :ref:`email <Contact>`
 us a PDF file! If you prefer you can also snail-mail us the original, please ask for the mailing address.
 
-.. _download: `our CLA`_
-.. _our CLA: /spray.io-CLA.pdf
-__ http://www.apache.org/licenses/icla.txt
+.. _download: `the Typesafe CLA`_
+.. _the Typesafe CLA: /v3-TypesafeIndividualCLAFinal.pdf
 
 
 Pull Requests
