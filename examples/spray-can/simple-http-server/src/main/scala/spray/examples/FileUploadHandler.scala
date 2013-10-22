@@ -11,12 +11,63 @@ import parser.HttpParser
 import HttpHeaders.RawHeader
 import spray.io.CommandWrapper
 import scala.annotation.tailrec
+import scala.collection.immutable.Queue
+import spray.can.Http
 
-class FileUploadHandler(client: ActorRef, start: ChunkedRequestStart) extends Actor with ActorLogging {
-  import start.request._
+/**
+ * A backpressure queue that automatically handles Suspend/ResumeReading for incoming
+ * MessageChunks and requires `AckConsumed` acknowledgements to manage the workers queue size.
+ */
+class SuspendingQueue(client: ActorRef, worker: ActorRef) extends Actor with ActorLogging {
+  val LowWaterMark = 1024*1024*20
+  val HighWaterMark = 1024*1024*50
+
+  var unackedBytes = 0L
+  var suspended = false
+
+  context.watch(worker)
   client ! CommandWrapper(SetRequestTimeout(Duration.Inf)) // cancel timeout
 
-  val tmpFile = File.createTempFile("chunked-receiver", ".tmp", new File("/tmp"))
+  def receive = {
+    case part: HttpRequestPart => dispatch(part)
+    case AckConsumed(bytes) =>
+      unackedBytes -= bytes
+      require(unackedBytes >= 0)
+      checkResume()
+    case Terminated(worker) => context.stop(self)
+    case x => client ! x
+  }
+
+  private def dispatch(part: HttpRequestPart): Unit = {
+    unackedBytes += messageBytes(part)
+    worker ! part
+
+    if (unackedBytes > HighWaterMark && !suspended) {
+      log.debug(s"Suspending with $unackedBytes bytes unacked")
+      suspended = true
+      client ! Http.SuspendReading
+    }
+  }
+  def checkResume(): Unit =
+    if (unackedBytes < LowWaterMark && suspended) {
+      suspended = false
+      log.debug(s"Resuming with $unackedBytes bytes unacked")
+      client ! Http.ResumeReading
+    }
+
+  private def messageBytes(part: HttpRequestPart): Long = part match {
+    case MessageChunk(data, _) => data.length
+    case _ => 0
+  }
+}
+case class AckConsumed(bytes: Long)
+
+class FileUploadHandler(start: ChunkedRequestStart) extends Actor with ActorLogging {
+  import start.request._
+
+  val dir = new File("/tmp")
+  dir.mkdirs()
+  val tmpFile = File.createTempFile("chunked-receiver", ".tmp", dir)
   tmpFile.deleteOnExit()
   val output = new FileOutputStream(tmpFile)
   val Some(HttpHeaders.`Content-Type`(ContentType(multipart: MultipartMediaType, _))) = header[HttpHeaders.`Content-Type`]
@@ -28,16 +79,16 @@ class FileUploadHandler(client: ActorRef, start: ChunkedRequestStart) extends Ac
   def receive = {
     case c: MessageChunk =>
       log.debug(s"Got ${c.data.length} bytes of chunked request $method $uri")
-
       output.write(c.data.toByteArray)
       bytesWritten += c.data.length
+      sender ! AckConsumed(c.data.length)
 
     case e: ChunkedMessageEnd =>
       log.info(s"Got end of chunked request $method $uri")
       output.close()
 
-      client ! HttpResponse(status = 200, entity = renderResult())
-      client ! CommandWrapper(SetRequestTimeout(2.seconds)) // reset timeout to original value
+      sender ! HttpResponse(status = 200, entity = renderResult())
+      sender ! CommandWrapper(SetRequestTimeout(2.seconds)) // reset timeout to original value
       tmpFile.delete()
       context.stop(self)
   }

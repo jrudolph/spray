@@ -55,8 +55,10 @@ class DemoService extends Actor with ActorLogging {
 
     case s@ChunkedRequestStart(HttpRequest(POST, Uri.Path("/file-upload"), _, _, _)) =>
       val client = sender
-      val handler = context.actorOf(Props(new FileUploadHandler(client, s)))
-      sender ! RegisterChunkHandler(handler)
+      val worker = context.actorOf(Props(new FileUploadHandler(s)))
+      val queue = context.actorOf(Props(new SuspendingQueue(client, worker)))
+
+      sender ! RegisterChunkHandler(queue)
 
     case _: HttpRequest => sender ! HttpResponse(status = 404, entity = "Unknown resource!")
 
