@@ -28,6 +28,7 @@ import spray.http._
 import spray.io._
 import spray.util.Timestamp
 import akka.io.Tcp.NoAck
+import spray.can.Http.RegisterChunkHandler
 
 private object ServerFrontend {
 
@@ -58,6 +59,7 @@ private object ServerFrontend {
           def timeoutTimeout = _timeoutTimeout // required due to https://issues.scala-lang.org/browse/SI-6387
 
           val commandPipeline: CPL = {
+            case Response(openRequest, RegisterChunkHandler(handler)) ⇒ openRequest.registerChunkHandler(handler)
             case Response(openRequest, command) if openRequest == firstOpenRequest ⇒
               commandPipeline(command) // "unpack" the command and recurse
 
@@ -80,8 +82,6 @@ private object ServerFrontend {
             case Response(openRequest, command) ⇒
               // a response for a non-current openRequest has to be queued
               openRequest.enqueueCommand(command, context.sender)
-
-            case ChunkHandlerRegistration(openRequest, handler) ⇒ openRequest.registerChunkHandler(handler)
 
             case CommandWrapper(SetRequestTimeout(timeout)) ⇒
               _requestTimeout = timeout

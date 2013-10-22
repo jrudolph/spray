@@ -49,24 +49,26 @@ private class ResponseReceiverRef(openRequest: OpenRequest)
         part.messagePart.asInstanceOf[HttpResponsePart] match {
           case x: HttpResponse ⇒
             require(x.protocol == HttpProtocols.`HTTP/1.1`, "Response must have protocol HTTP/1.1")
-            dispatch(part, Uncompleted, Completed)
+            dispatchMessage(part, Uncompleted, Completed)
           case x: ChunkedResponseStart ⇒
             require(x.response.protocol == HttpProtocols.`HTTP/1.1`, "Response must have protocol HTTP/1.1")
-            dispatch(part, Uncompleted, Chunking)
-          case _: MessageChunk      ⇒ dispatch(part, Chunking, Chunking)
-          case _: ChunkedMessageEnd ⇒ dispatch(part, Chunking, Completed)
+            dispatchMessage(part, Uncompleted, Chunking)
+          case _: MessageChunk      ⇒ dispatchMessage(part, Chunking, Chunking)
+          case _: ChunkedMessageEnd ⇒ dispatchMessage(part, Chunking, Completed)
 
         }
-      case RegisterChunkHandler(handler) ⇒ dispatch(ChunkHandlerRegistration(openRequest, handler), WaitingForChunkHandler, Uncompleted)
-      case x: Command                    ⇒ dispatch(x)
+      case r: RegisterChunkHandler ⇒ dispatchResponse(r, WaitingForChunkHandler, Uncompleted)
+      case x: Command              ⇒ dispatch(x)
       case x ⇒
         openRequest.context.log.warning("Illegal response {} to {}", x, requestInfo)
         unhandledMessage(x)
     }
   }
 
-  private def dispatch(msg: HttpMessagePartWrapper, expectedState: ResponseState, newState: ResponseState)(implicit sender: ActorRef): Unit =
-    dispatch(new Response(openRequest, Http.MessageCommand(msg)))
+  private def dispatchMessage(msg: HttpMessagePartWrapper, expectedState: ResponseState, newState: ResponseState)(implicit sender: ActorRef): Unit =
+    dispatchResponse(Http.MessageCommand(msg), expectedState, newState)
+  private def dispatchResponse(cmd: Command, expectedState: ResponseState, newState: ResponseState)(implicit sender: ActorRef): Unit =
+    dispatch(new Response(openRequest, cmd), expectedState, newState)
   private def dispatch(cmd: Command, expectedState: ResponseState, newState: ResponseState)(implicit sender: ActorRef): Unit = {
     if (Unsafe.instance.compareAndSwapObject(this, responseStateOffset, expectedState, newState)) {
       dispatch(cmd)
@@ -92,4 +94,3 @@ private class ResponseReceiverRef(openRequest: OpenRequest)
 }
 
 private case class Response(openRequest: OpenRequest, cmd: Command) extends Command
-private case class ChunkHandlerRegistration(openRequest: OpenRequest, chunkHandler: ActorRef) extends Command()
