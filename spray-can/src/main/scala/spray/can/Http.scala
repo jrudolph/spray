@@ -92,6 +92,9 @@ object Http extends ExtensionKey[HttpExt] {
   case class Unbind(timeout: Duration) extends Command
   object Unbind extends Unbind(Duration.Zero)
 
+  val SuspendReading = Tcp.SuspendReading
+  val ResumeReading = Tcp.ResumeReading
+
   type CloseCommand = Tcp.CloseCommand
   val Close = Tcp.Close
   val ConfirmedClose = Tcp.ConfirmedClose
