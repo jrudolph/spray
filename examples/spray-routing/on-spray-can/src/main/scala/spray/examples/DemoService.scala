@@ -30,9 +30,8 @@ class DemoServiceActor extends Actor with DemoService {
   def receive = runRoute(demoRoute)
 }
 
-
 // this trait defines our service behavior independently from the service actor
-trait DemoService extends HttpService {
+trait DemoService extends HttpService with TokenExtractionDirectives {
 
   // we use the enclosing ActorContext's or ActorSystem's dispatcher for our Futures and Scheduler
   implicit def executionContext = actorRefFactory.dispatcher
@@ -79,6 +78,17 @@ trait DemoService extends HttpService {
               "(Note that your browser will likely enforce a cache invalidation with a\n" +
               "`Cache-Control: max-age=0` header when you click 'reload', so you might need to `curl` this\n" +
               "resource in order to be able to see the cache effect!)")
+          }
+        }
+      } ~
+      pathPrefix("tester") {
+        extractAsToken(_.unmatchedPath) { up => // arbitrary extractions, could be anything
+          extractAsToken(_.request.uri) { uri =>
+            pathSuffix("test") {
+              (up & uri) { (x, y) =>
+                complete(s"The path is $x and $y")
+              }
+            }
           }
         }
       } ~
