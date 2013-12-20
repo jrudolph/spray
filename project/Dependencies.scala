@@ -20,6 +20,7 @@ object Dependencies {
   val parboiled     = "org.parboiled"                           %%  "parboiled-scala"             % "1.1.6"
   val shapeless     = "com.chuusai"                             %%  "shapeless"                   % "1.2.4"
   val scalatest     = "org.scalatest"                           %%  "scalatest"                   % "1.9.1"
+  val scalatest2    = "org.scalatest"              %% "scalatest"                    % "2.0"
   val specs2        = "org.specs2"                              %%  "specs2"                      % "2.2.3"
   val sprayJson     = "io.spray"                                %%  "spray-json"                  % "1.2.5"
   val twirlApi      = "io.spray"                                %%  "twirl-api"                   % "0.6.2"

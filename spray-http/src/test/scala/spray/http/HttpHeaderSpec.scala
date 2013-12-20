@@ -16,8 +16,6 @@
 
 package spray.http
 
-import org.specs2.mutable.Specification
-import org.specs2.matcher.MatchResult
 import parser.HttpParser
 import CacheDirectives._
 import HttpHeaders._
@@ -27,11 +25,13 @@ import HttpCharsets._
 import HttpEncodings._
 import HttpMethods._
 import spray.util._
+import org.scalatest.{ Matchers, WordSpec }
+import org.scalatest.matchers.{ BeMatcher, Matcher, MatchResult }
 
-class HttpHeaderSpec extends Specification {
+class HttpHeaderSpec extends WordSpec with Matchers {
   val `application/vnd.spray` = MediaTypes.register(MediaType.custom("application/vnd.spray"))
 
-  "The HTTP header model must correctly parse and render the following headers" >> {
+  "The HTTP header model must correctly parse and render the following headers" should {
 
     "Accept" in {
       "Accept: audio/midi;q=0.2, audio/basic" =!=
@@ -334,39 +334,42 @@ class HttpHeaderSpec extends Specification {
 
   implicit class TestLine(line: String) {
     def =!=(testHeader: TestExample) = testHeader(line)
-    def =!=>(expectedRendering: String): MatchResult[Any] = {
+    def =!=>(expectedRendering: String) = {
       val Array(name, value) = line.split(": ", 2)
       val Right(header) = HttpParser.parseHeader(RawHeader(name, value))
-      header.toString === {
-        header match {
-          case x: ModeledHeader ⇒ x.name + ": " + expectedRendering
-          case _                ⇒ expectedRendering
-        }
-      }
+      header.toString shouldBe header.renderedTo(expectedRendering).rendering("")
     }
   }
-  sealed trait TestExample extends (String ⇒ MatchResult[Any])
+  sealed trait TestExample extends (String ⇒ Unit)
   implicit class TestHeader(header: HttpHeader) extends TestExample {
     def apply(line: String) = {
       val Array(name, value) = line.split(": ", 2)
-      HttpParser.parseHeader(RawHeader(name, value)) === Right(header) and rendersTo(line)
+      HttpParser.parseHeader(RawHeader(name, value)) should (be(Right(header)) and renderFromHeaderTo(this, line))
     }
-    protected def rendersTo(line: String) = header.toString === line
+    def rendering(line: String): String = line
     def renderedTo(expectedRendering: String): TestHeader =
       new TestHeader(header) {
-        override protected def rendersTo(line: String) =
-          header.toString === {
-            header match {
-              case x: ModeledHeader ⇒ x.name + ": " + expectedRendering
-              case _                ⇒ expectedRendering
-            }
+        override def rendering(line: String): String =
+          header match {
+            case x: ModeledHeader ⇒ x.name + ": " + expectedRendering
+            case _                ⇒ expectedRendering
           }
       }
   }
   implicit class TestError(expectedError: ErrorInfo) extends TestExample {
     def apply(line: String) = {
       val Array(name, value) = line.split(": ", 2)
-      HttpParser.parseHeader(RawHeader(name, value)) === Left(expectedError)
+      HttpParser.parseHeader(RawHeader(name, value)) shouldBe Left(expectedError)
     }
   }
+
+  def renderFromHeaderTo(header: TestHeader, line: String): Matcher[Either[ErrorInfo, HttpHeader]] =
+    Matcher { result ⇒
+      val success = result.right.exists(h ⇒ h.toString === header.rendering(line))
+
+      MatchResult(
+        success,
+        s"Doesn't render to '${header.rendering(line)}'",
+        s"Renders unexpectedly to '$line'")
+    }
 }

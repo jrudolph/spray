@@ -96,7 +96,7 @@ object Build extends Build {
     .settings(libraryDependencies ++=
       compile(parboiled) ++
       provided(akkaActor) ++
-      test(specs2)
+      test(specs2, scalatest2)
     )
 
 
