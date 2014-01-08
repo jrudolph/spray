@@ -63,11 +63,12 @@ object SimpleServerClient extends App with CustomSslConfiguration {
           }
         })
 
-  (httpClient ? HostConnectorSetup("puredata.info", 443, sslEncryption = true)(system, sslEngineProvider)).mapTo[HostConnectorInfo].foreach { info =>
-    println(s"Got connector: $info. Ssl encryption is ${info.setup.settings.get.connectionSettings.sslEncryption}")
+  (httpClient ? HostConnectorSetup("sws-crt.cert.sabre.com", 443, sslEncryption = true)(system, sslEngineProvider)).mapTo[HostConnectorInfo].foreach { info =>
+    //println(s"Got connector: $info. Ssl encryption is ${info.setup.settings.get.connectionSettings.sslEncryption}")
     val pipeline = sendReceiveWithRedirect(info.hostConnector)
 
-    pipeline(Get("/login_form")).onComplete { res =>
+  val req = <someRequest></someRequest>
+    pipeline(Post("/",req)).onComplete { res =>
       println(res)
     }
   }

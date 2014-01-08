@@ -43,7 +43,8 @@ private object ResponseParsing {
           var parser: Parser = responseParser
           var openRequestMethods = Queue.empty[HttpMethod]
 
-          @tailrec def handleParsingResult(result: Result): Unit =
+          @tailrec def handleParsingResult(result: Result): Unit = {
+            println(s"Parsing result was $result")
             result match {
               case Result.Emit(part, closeAfterResponseCompletion, continue) ⇒
                 eventPL(Http.MessageEvent(part))
@@ -69,6 +70,7 @@ private object ResponseParsing {
               case Result.Expect100Continue(_) ⇒
                 handleError(ErrorInfo("'Expect: 100-continue' is not allowed in HTTP responses"))
             }
+          }
 
           val commandPipeline: CPL = {
             case x @ RequestPartRenderingContext(reqStart: HttpMessageStart, _, _) ⇒
@@ -81,7 +83,9 @@ private object ResponseParsing {
           }
 
           val eventPipeline: EPL = {
-            case Tcp.Received(data) ⇒ processReceivedData(data)
+            case Tcp.Received(data) ⇒
+              println(s"Got data $data")
+              processReceivedData(data)
 
             case ev @ Http.PeerClosed ⇒
               processReceivedData(ByteString.empty)

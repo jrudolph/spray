@@ -48,7 +48,7 @@ trait SslTlsContext extends PipelineContext {
 object SslTlsSupport {
 
   def apply(maxEncryptionChunkSize: Int, publishSslSessionInfo: Boolean,
-            tracing: Boolean = false): OptionalPipelineStage[SslTlsContext] =
+            tracing: Boolean = true): OptionalPipelineStage[SslTlsContext] =
     new OptionalPipelineStage[SslTlsContext] {
       def enabled(context: SslTlsContext) = context.sslEngine.isDefined
 

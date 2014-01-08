@@ -81,6 +81,7 @@ private object ClientFrontend {
 
           val eventPipeline: EPL = {
             case Http.MessageEvent(x: HttpMessageEnd) ⇒
+              println(s"Got message $x")
               if (!openRequests.isEmpty) {
                 val currentRecord = openRequests.head
                 openRequests = openRequests.tail
