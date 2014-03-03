@@ -24,12 +24,12 @@ object Build extends Build {
     .settings(noPublishing: _*)
     .settings(unidocSettings: _*)
     .settings(
-      excludedProjects in unidoc in ScalaUnidoc ++= Seq(
+      /*excludedProjects in unidoc in ScalaUnidoc ++= Seq(
         "docs", "echo-server", "examples", "on-jetty", "on-spray-can", "server-benchmark", "simple-http-client",
         "simple-http-server", "simple-routing-app", "simple-spray-client", "simple-spray-servlet-server", "site",
         "spray-can-examples", "spray-client-examples", "spray-io-examples", "spray-routing-examples",
         "spray-servlet-examples"
-      ),
+      ),*/
       target in (ScalaUnidoc, unidoc) <<= (resourceManaged in Compile in site, version) { (path, version) =>
         (path / "api" / version)
       },

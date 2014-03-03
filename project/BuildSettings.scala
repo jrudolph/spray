@@ -11,9 +11,11 @@ import spray.revolver.RevolverPlugin.Revolver
 import twirl.sbt.TwirlPlugin.Twirl
 import com.typesafe.sbt.osgi.SbtOsgi
 import SbtOsgi._
+import com.typesafe.tools.mima
 
 object BuildSettings {
   val VERSION = "1.1-SNAPSHOT"
+  val COMPATIBLE_VERSION = "1.1.0"
 
   lazy val basicSettings = seq(
     version               := NightlyBuildSupport.buildVersion(VERSION),
@@ -42,6 +44,7 @@ object BuildSettings {
     NightlyBuildSupport.settings ++
     net.virtualvoid.sbt.graph.Plugin.graphSettings ++
     SbtPgp.settings ++
+    mima.plugin.MimaPlugin.mimaDefaultSettings ++
     seq(
       // scaladoc settings
       (scalacOptions in doc) <++= (name, version).map { (n, v) => Seq("-doc-title", n, "-doc-version", v) },
@@ -72,7 +75,10 @@ object BuildSettings {
         <developers>
           <developer><id>sirthias</id><name>Mathias Doenitz</name></developer>
           <developer><id>jrudolph</id><name>Johannes Rudolph</name></developer>
-        </developers>
+        </developers>,
+      mima.plugin.MimaKeys.previousArtifact <<= projectID { id =>
+        Some(id.copy(revision = COMPATIBLE_VERSION))
+      }
     )
 
   lazy val noPublishing = seq(
@@ -102,10 +108,10 @@ object BuildSettings {
 
   lazy val siteSettings = basicSettings ++ formatSettings ++ noPublishing ++ Twirl.settings ++ Revolver.settings ++
     SiteSupport.settings ++ seq(
-      resourceGenerators in Compile <+= (target in ScalaUnidoc in unidoc in LocalRootProject){ docsLocation =>
+      /*resourceGenerators in Compile <+= (target in ScalaUnidoc in unidoc in LocalRootProject){ docsLocation =>
         constant(Seq(docsLocation)).map(_.flatMap(_.***.get))
       },
-      assembly <<= assembly.dependsOn(unidoc in LocalRootProject)
+      assembly <<= assembly.dependsOn(unidoc in LocalRootProject)*/
     )
 
   lazy val docsSettings = basicSettings ++ noPublishing ++ seq(
@@ -122,10 +128,10 @@ object BuildSettings {
     javaOptions in Revolver.reStart ++= Seq("-verbose:gc", "-XX:+PrintCompilation")
   )
 
-  import com.github.siasia.WebPlugin._
+  import com.earldouglas.xsbtwebplugin.WebPlugin._
   lazy val jettyExampleSettings = exampleSettings ++ webSettings // ++ disableJettyLogSettings
 
-  import com.github.siasia.PluginKeys._
+  import com.earldouglas.xsbtwebplugin.PluginKeys._
   lazy val disableJettyLogSettings = inConfig(container.Configuration) {
     seq(
       start <<= (state, port, apps, customConfiguration, configurationFiles, configurationXml) map {
