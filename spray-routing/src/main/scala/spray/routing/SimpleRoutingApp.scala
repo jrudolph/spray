@@ -47,7 +47,11 @@ trait SimpleRoutingApp extends HttpService {
                   serviceActorName: String = "simple-service-actor",
                   backlog: Int = 100,
                   options: immutable.Traversable[Inet.SocketOption] = Nil,
-                  settings: Option[ServerSettings] = None)(route: ⇒ Route)(implicit system: ActorSystem, sslEngineProvider: ServerSSLEngineProvider,
+                  settings: Option[ServerSettings] = None)(route: ⇒ Route)(implicit system: ActorSystem,
+                                                                           sslEngineProvider: ServerSSLEngineProvider,
+                                                                           eh: ExceptionHandler,
+                                                                           rh: RejectionHandler,
+                                                                           rs: RoutingSettings,
                                                                            bindingTimeout: Timeout = 1.second): Future[Http.Bound] = {
     val serviceActor = system.actorOf(
       props = Props {
