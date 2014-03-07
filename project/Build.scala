@@ -143,7 +143,8 @@ object Build extends Build {
     .settings(osgiSettings(exports = Seq("spray.routing"), imports = Seq("shapeless.*;resolution:=optional")): _*)
     .settings(libraryDependencies ++=
       compile(shapeless) ++
-      provided(akkaActor)
+      provided(akkaActor),
+      scalacOptions ++= Seq("-Xmax-classfile-name", "74")
     )
 
 
