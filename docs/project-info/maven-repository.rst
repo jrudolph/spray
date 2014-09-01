@@ -3,13 +3,7 @@
 Maven Repository
 ================
 
-Currently the artifacts for all *spray* releases (including milestones and RCs) are hosted in this repository:
-
-  http://repo.spray.io
-
-If you use SBT_ you'll want to add the following resolver::
-
-  resolvers += "spray repo" at "http://repo.spray.io"
+Currently the artifacts for all *spray* releases (including milestones and RCs) are available on Maven central.
 
 Nightly builds are available from http://nightlies.spray.io, to use them add this resolver::
 
